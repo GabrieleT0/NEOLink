@@ -65,6 +65,12 @@
     },
     "orcid_link": {
       "type": "string"
+    },
+    "research_units_tours": {
+      "type": "string"
+    },
+    "specific_research_units_tours": {
+      "type": "string"
     }
   }
 }

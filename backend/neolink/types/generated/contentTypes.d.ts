@@ -687,7 +687,9 @@ export interface ApiSellerSeller extends Struct.CollectionTypeSchema {
     personal_page_link: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
     research_group_link: Schema.Attribute.String;
+    research_units_tours: Schema.Attribute.String;
     second_level_structure: Schema.Attribute.String;
+    specific_research_units_tours: Schema.Attribute.String;
     university_name: Schema.Attribute.String;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &

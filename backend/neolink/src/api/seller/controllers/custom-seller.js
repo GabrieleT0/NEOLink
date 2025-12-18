@@ -121,7 +121,7 @@ module.exports = {
             const otp = ctx.request.body.otp
             let entry
             entry = await strapi.db.query('api::seller.seller').findOne({
-                select: ['id', 'email'],
+                select: ['id', 'email', 'full_name', 'research_group_link', 'personal_page_link', 'university_name', 'first_level_structure', 'second_level_structure', 'orcid_link', 'research_units_tours', 'specific_research_units_tours', 'virtual_cafe_id', 'orh_id'],
                 where:{
                     email : email,
                     OTP : otp,
@@ -138,13 +138,25 @@ module.exports = {
             } else {
                 return ctx.response.unauthorized('You are not authorized to access this resource, you must authenticate yourself')
             }
-            
-            const token = jwt.sign({user_id: entry.id, email: entry.email}, process.env.JWT_SECRET_CUSTOM_AUTH, {expiresIn: process.env.JWT_EXPIRES_CUSTOM_AUTH_IN})
+            console.log(entry)
+            const token = jwt.sign({
+                user_id: entry.id, 
+                email: entry.email,
+                full_name: entry.full_name,
+                research_group_link: entry.research_group_link,
+                personal_page_link: entry.personal_page_link,
+                university_name: entry.university_name,
+                first_level_structure: entry.first_level_structure,
+                second_level_structure: entry.second_level_structure,
+                orcid_link: entry.orcid_link,
+                research_units_tours: entry.research_units_tours,
+                specific_research_units_tours: entry.specific_research_units_tours,
+                virtual_cafe_id: entry.virtual_cafe_id,
+                orh_id: entry.orh_id
+            }, process.env.JWT_SECRET_CUSTOM_AUTH, {expiresIn: process.env.JWT_EXPIRES_CUSTOM_AUTH_IN})
             ctx.send({ token })
-        
-
-
         } catch (error){
+            console.log(error)
             ctx.response.internalServerError(error)
         }
     },
