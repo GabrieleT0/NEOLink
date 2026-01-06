@@ -71,6 +71,12 @@
     },
     "specific_research_units_tours": {
       "type": "string"
+    },
+    "interested_items": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::item.item",
+      "mappedBy": "interested_users"
     }
   }
 }

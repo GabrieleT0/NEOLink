@@ -15,7 +15,9 @@
       "type": "string"
     },
     "university": {
-      "type": "integer"
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::university.university"
     }
   }
 }

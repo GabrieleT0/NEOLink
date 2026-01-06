@@ -25,9 +25,6 @@
     "description": {
       "type": "text"
     },
-    "category_id": {
-      "type": "integer"
-    },
     "expiration": {
       "type": "date"
     },
@@ -57,12 +54,6 @@
     },
     "level_of_study": {
       "type": "text"
-    },
-    "university": {
-      "type": "integer"
-    },
-    "second_level_structure": {
-      "type": "integer"
     },
     "seller_name": {
       "type": "string"
@@ -98,6 +89,27 @@
         "Life Sciences (LS)",
         "Social Sciences and Humanities (SH)"
       ]
+    },
+    "university": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::university.university"
+    },
+    "interested_users": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::seller.seller",
+      "inversedBy": "interested_items"
+    },
+    "second_level_structure": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::second-level-structure.second-level-structure"
+    },
+    "item_category": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::item-category.item-category"
     }
   }
 }

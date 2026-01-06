@@ -11,9 +11,6 @@
   },
   "pluginOptions": {},
   "attributes": {
-    "seller_id": {
-      "type": "integer"
-    },
     "item_id": {
       "type": "integer"
     },

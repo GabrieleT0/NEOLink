@@ -2,7 +2,7 @@ const axios = require('axios');
 module.exports = {
     async create(ctx, next){
         try{
-            const { item_status, name, description, category_id, expiration, isced_code, erc_area, erc_panel, erc_keyword, start_date, learning_outcomes, multimediarial_material_provided, end_date, languages, speakers, pedagogical_objectives, level_of_study, university, first_level_structure, second_level_structure, offered_by, cover} = ctx.request.body;
+            const { item_status, name, description, item_category, expiration, isced_code, erc_area, erc_panel, erc_keyword, start_date, learning_outcomes, multimediarial_material_provided, end_date, languages, speakers, pedagogical_objectives, level_of_study, university, first_level_structure, second_level_structure, offered_by, cover} = ctx.request.body;
             const {group_name, group_display_name, group_description, category_name, category_color} = ctx.request.body;
             const email = ctx.request.body.data.email
             try{
@@ -96,7 +96,7 @@ module.exports = {
                     item_status,
                     name,
                     description,
-                    category_id: category_id ? parseInt(category_id) : null,
+                    item_category,
                     expiration,
                     isced_code,
                     erc_area,
@@ -110,9 +110,9 @@ module.exports = {
                     speakers,
                     pedagogical_objectives,
                     level_of_study,
-                    university: university ? parseInt(university) : null,
+                    university,
                     first_level_structure,
-                    second_level_structure: second_level_structure ? parseInt(second_level_structure) : null,
+                    second_level_structure,
                     seller_name: offered_by,
                     discourse_group_id: discourse_group_id ? parseInt(discourse_group_id) : null,
                     discourse_category_id: discourse_category_id ? parseInt(discourse_category_id) : null,

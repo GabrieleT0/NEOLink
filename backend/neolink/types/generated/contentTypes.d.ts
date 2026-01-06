@@ -524,7 +524,10 @@ export interface ApiFirstLevelStructureFirstLevelStructure
       Schema.Attribute.Private;
     name: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
-    university: Schema.Attribute.Integer;
+    university: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::university.university'
+    >;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -556,7 +559,6 @@ export interface ApiInterestInterest extends Struct.CollectionTypeSchema {
     > &
       Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
-    seller_id: Schema.Attribute.Integer;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -604,7 +606,6 @@ export interface ApiItemItem extends Struct.CollectionTypeSchema {
     draftAndPublish: true;
   };
   attributes: {
-    category_id: Schema.Attribute.Integer;
     coverId: Schema.Attribute.Integer;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -633,7 +634,15 @@ export interface ApiItemItem extends Struct.CollectionTypeSchema {
       'oneToOne',
       'api::first-level-structure.first-level-structure'
     >;
+    interested_users: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::seller.seller'
+    >;
     isced_code: Schema.Attribute.String;
+    item_category: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::item-category.item-category'
+    >;
     item_status: Schema.Attribute.Enumeration<['active', 'running', 'expired']>;
     languages: Schema.Attribute.String;
     learning_outcomes: Schema.Attribute.Text;
@@ -645,11 +654,17 @@ export interface ApiItemItem extends Struct.CollectionTypeSchema {
     name: Schema.Attribute.String;
     pedagogical_objectives: Schema.Attribute.Text;
     publishedAt: Schema.Attribute.DateTime;
-    second_level_structure: Schema.Attribute.Integer;
+    second_level_structure: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::second-level-structure.second-level-structure'
+    >;
     seller_name: Schema.Attribute.String;
     speakers: Schema.Attribute.Text;
     start_date: Schema.Attribute.Date;
-    university: Schema.Attribute.Integer;
+    university: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::university.university'
+    >;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -708,6 +723,7 @@ export interface ApiSellerSeller extends Struct.CollectionTypeSchema {
     first_access: Schema.Attribute.Boolean;
     first_level_structure: Schema.Attribute.String;
     full_name: Schema.Attribute.String;
+    interested_items: Schema.Attribute.Relation<'oneToMany', 'api::item.item'>;
     linkedin_link: Schema.Attribute.String;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
