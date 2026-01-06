@@ -1,0 +1,626 @@
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import axios from "axios";
+import { base_url } from "../api";
+
+const logo_neolaia = "/logoNEOLAiA.png";
+const eu_logo = "/eu_logo.png";
+
+function ItemDetail() {
+    const { documentId } = useParams();
+    const navigate = useNavigate();
+    const [item, setItem] = useState(null);
+    const [relatedData, setRelatedData] = useState({
+        university: null,
+        category: null,
+        secondLevelStructure: null
+    });
+    const [coverImage, setCoverImage] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    // Get base URL without /api for uploads
+    const getUploadBaseUrl = () => {
+        return base_url.replace('/api', '');
+    };
+
+    useEffect(() => {
+        fetchItemDetails();
+    }, [documentId]);
+
+    const fetchItemDetails = async () => {
+        setLoading(true);
+        setError(null);
+
+        try {
+            // Fetch main item data
+            const itemResponse = await axios.get(`${base_url}/items/${documentId}?populate=*`);
+            const itemData = itemResponse.data.data;
+            setItem(itemData);
+
+            // Fetch related data in parallel
+            const promises = [];
+
+            if (itemData.coverId) {
+                promises.push(
+                    axios.get(`${base_url}/upload/files/${itemData.coverId}`)
+                        .then(res => ({ coverImage: res.data }))
+                        .catch(err => {
+                            console.error("Error fetching cover image:", err);
+                            return { coverImage: null };
+                        })
+                );
+            }
+
+            const results = await Promise.all(promises);
+            
+            // Merge all related data
+            const mergedData = results.reduce((acc, curr) => ({ ...acc, ...curr }), {});
+            setRelatedData({
+                university: mergedData.university,
+                category: mergedData.category,
+                secondLevelStructure: mergedData.secondLevelStructure
+            });
+            setCoverImage(mergedData.coverImage);
+
+            setLoading(false);
+        } catch (err) {
+            console.error("Error fetching item details:", err);
+            setError("Failed to load item details. Please try again.");
+            setLoading(false);
+        }
+    };
+
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    };
+
+    const getStatusColor = (status) => {
+        switch(status) {
+            case 'active': return '#28a745';
+            case 'running': return '#007bff';
+            case 'expired': return '#dc3545';
+            default: return '#6c757d';
+        }
+    };
+
+    const getCoverImageUrl = () => {
+        if (coverImage && coverImage.url) {
+            const uploadBaseUrl = getUploadBaseUrl();
+            if (coverImage.formats?.large) {
+                return `${uploadBaseUrl}${coverImage.formats.large.url}`;
+            }
+            return `${uploadBaseUrl}${coverImage.url}`;
+        }
+        return 'https://placehold.co/1200x400?text=No+Cover+Image';
+    };
+
+    if (loading) {
+        return (
+            <div style={{ 
+                minHeight: '100vh',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: '#fafafa'
+            }}>
+                <div style={{ textAlign: 'center' }}>
+                    <div style={{
+                        width: '3rem',
+                        height: '3rem',
+                        border: '0.3rem solid #f3f3f3',
+                        borderTop: '0.3rem solid #7c6fd6',
+                        borderRadius: '50%',
+                        animation: 'spin 1s linear infinite',
+                        margin: '0 auto'
+                    }}></div>
+                    <p style={{ marginTop: '1rem', color: '#6c757d' }}>Loading item details...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error || !item) {
+        return (
+            <div style={{ 
+                minHeight: '100vh',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: '#fafafa'
+            }}>
+                <div style={{
+                    backgroundColor: 'white',
+                    padding: '2rem',
+                    borderRadius: '16px',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                    textAlign: 'center',
+                    maxWidth: '500px'
+                }}>
+                    <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>❌</div>
+                    <h2 style={{ color: '#dc3545', marginBottom: '1rem' }}>Error</h2>
+                    <p style={{ color: '#6c757d', marginBottom: '1.5rem' }}>
+                        {error || "Item not found"}
+                    </p>
+                    <button
+                        onClick={() => navigate('/items')}
+                        style={{
+                            padding: '0.75rem 1.5rem',
+                            backgroundColor: '#7c6fd6',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            fontWeight: '600'
+                        }}
+                    >
+                        Back to Items
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div style={{ 
+            minHeight: '100vh',
+            backgroundColor: '#fafafa',
+            display: 'flex',
+            flexDirection: 'column'
+        }}>
+            <style>{`
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            `}</style>
+
+            {/* Header */}
+            <div style={{
+                padding: '1rem 0',
+                borderBottom: '1px solid #dee2e6',
+                backgroundColor: 'white',
+                width: '100%'
+            }}>
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '0 1.5rem',
+                    maxWidth: '1400px',
+                    margin: '0 auto'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <img 
+                            src={logo_neolaia} 
+                            alt='Logo NEOLAiA' 
+                            style={{ maxHeight: '50px', height: 'auto', cursor: 'pointer' }}
+                            onClick={() => navigate('/')}
+                        />
+                    </div>
+                    <img 
+                        src={eu_logo} 
+                        alt='Logo EU' 
+                        style={{ maxHeight: '45px', height: 'auto' }}
+                    />
+                </div>
+            </div>
+
+            {/* Main Content */}
+            <div style={{
+                flex: 1,
+                maxWidth: '1200px',
+                width: '100%',
+                margin: '0 auto',
+                padding: '2rem 1rem'
+            }}>
+                {/* Back Button */}
+                <button
+                    onClick={() => navigate('/items')}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '0.5rem 1rem',
+                        backgroundColor: 'transparent',
+                        color: '#7c6fd6',
+                        border: '2px solid #7c6fd6',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontWeight: '600',
+                        marginBottom: '2rem',
+                        transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                        e.target.style.backgroundColor = '#7c6fd6';
+                        e.target.style.color = 'white';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = 'transparent';
+                        e.target.style.color = '#7c6fd6';
+                    }}
+                >
+                    ← Back to Items
+                </button>
+
+                {/* Cover Image */}
+                <div style={{
+                    width: '100%',
+                    height: '250px',
+                    borderRadius: '16px',
+                    overflow: 'hidden',
+                    marginBottom: '2rem',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                }}>
+                    <img 
+                        src={getCoverImageUrl()}
+                        alt={item.name}
+                        style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover'
+                        }}
+                        onError={(e) => {
+                            e.target.src = 'https://placehold.co/1200x400?text=No+Image';
+                        }}
+                    />
+                </div>
+
+                {/* Main Content Card */}
+                <div style={{
+                    backgroundColor: 'white',
+                    borderRadius: '16px',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                    padding: '2rem',
+                    marginBottom: '2rem'
+                }}>
+                    {/* Status Badge */}
+                    <div style={{ marginBottom: '1.5rem' }}>
+                        <span style={{
+                            display: 'inline-block',
+                            padding: '0.5rem 1rem',
+                            backgroundColor: getStatusColor(item.item_status),
+                            color: 'white',
+                            borderRadius: '20px',
+                            fontSize: '0.875rem',
+                            fontWeight: '600',
+                            textTransform: 'uppercase'
+                        }}>
+                            {item.item_status}
+                        </span>
+                    </div>
+
+                    {/* Title */}
+                    <h1 style={{
+                        fontSize: 'clamp(2rem, 4vw, 3rem)',
+                        fontWeight: '700',
+                        color: '#213547',
+                        marginBottom: '1rem',
+                        lineHeight: '1.2'
+                    }}>
+                        {item.name}
+                    </h1>
+
+                    {/* Meta Info Bar */}
+                    <div style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '1.5rem',
+                        paddingBottom: '1.5rem',
+                        marginBottom: '1.5rem',
+                        borderBottom: '2px solid #e9ecef'
+                    }}>
+                        {item.seller_name && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span style={{ fontSize: '1.2rem' }}>👤</span>
+                                <div>
+                                    <div style={{ fontSize: '0.75rem', color: '#6c757d', fontWeight: '600' }}>
+                                        Offered By
+                                    </div>
+                                    <div style={{ fontWeight: '600', color: '#495057' }}>
+                                        {item.seller_name}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {item.languages && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span style={{ fontSize: '1.2rem' }}>🌐</span>
+                                <div>
+                                    <div style={{ fontSize: '0.75rem', color: '#6c757d', fontWeight: '600' }}>
+                                        Languages
+                                    </div>
+                                    <div style={{ fontWeight: '600', color: '#495057' }}>
+                                        {item.languages}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {item.item_category && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span style={{ fontSize: '1.2rem' }}>📁</span>
+                                <div>
+                                    <div style={{ fontSize: '0.75rem', color: '#6c757d', fontWeight: '600' }}>
+                                        Category
+                                    </div>
+                                    <div style={{ fontWeight: '600', color: '#495057' }}>
+                                        {item.item_category?.name || 'N/A'}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Description */}
+                    {item.description && (
+                        <div style={{ marginBottom: '2rem' }}>
+                            <h2 style={{
+                                fontSize: '1.5rem',
+                                fontWeight: '600',
+                                color: '#213547',
+                                marginBottom: '1rem'
+                            }}>
+                                Description
+                            </h2>
+                            <p style={{
+                                fontSize: '1.1rem',
+                                lineHeight: '1.7',
+                                color: '#495057',
+                                whiteSpace: 'pre-wrap'
+                            }}>
+                                {item.description}
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Dates Section */}
+                    {(item.start_date || item.end_date || item.expiration) && (
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                            gap: '1rem',
+                            marginBottom: '2rem',
+                            padding: '1.5rem',
+                            backgroundColor: '#f8f9fa',
+                            borderRadius: '12px'
+                        }}>
+                            {item.start_date && (
+                                <div>
+                                    <div style={{ fontSize: '0.85rem', color: '#6c757d', fontWeight: '600', marginBottom: '0.25rem' }}>
+                                        Start Date
+                                    </div>
+                                    <div style={{ fontSize: '1rem', fontWeight: '600', color: '#495057' }}>
+                                        📅 {formatDate(item.start_date)}
+                                    </div>
+                                </div>
+                            )}
+                            {item.end_date && (
+                                <div>
+                                    <div style={{ fontSize: '0.85rem', color: '#6c757d', fontWeight: '600', marginBottom: '0.25rem' }}>
+                                        End Date
+                                    </div>
+                                    <div style={{ fontSize: '1rem', fontWeight: '600', color: '#495057' }}>
+                                        📅 {formatDate(item.end_date)}
+                                    </div>
+                                </div>
+                            )}
+                            {item.expiration && (
+                                <div>
+                                    <div style={{ fontSize: '0.85rem', color: '#6c757d', fontWeight: '600', marginBottom: '0.25rem' }}>
+                                        Expiration Date
+                                    </div>
+                                    <div style={{ fontSize: '1rem', fontWeight: '600', color: '#495057' }}>
+                                        ⏰ {formatDate(item.expiration)}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* Additional Information Grid */}
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                    gap: '1.5rem',
+                    marginBottom: '2rem'
+                }}>
+                    {/* Learning Outcomes */}
+                    {item.learning_outcomes && (
+                        <InfoCard 
+                            title="Learning Outcomes"
+                            icon="🎯"
+                            content={item.learning_outcomes}
+                        />
+                    )}
+
+                    {/* Pedagogical Objectives */}
+                    {item.pedagogical_objectives && (
+                        <InfoCard 
+                            title="Pedagogical Objectives"
+                            icon="📚"
+                            content={item.pedagogical_objectives}
+                        />
+                    )}
+
+                    {/* Multimedia Material */}
+                    {item.multimedial_material_provided && (
+                        <InfoCard 
+                            title="Multimedia Material"
+                            icon="🎬"
+                            content={item.multimedial_material_provided}
+                        />
+                    )}
+
+                    {/* Speakers */}
+                    {item.speakers && (
+                        <InfoCard 
+                            title="Speakers"
+                            icon="🎤"
+                            content={item.speakers}
+                        />
+                    )}
+
+                    {/* Level of Study */}
+                    {item.level_of_study && (
+                        <InfoCard 
+                            title="Level of Study"
+                            icon="🎓"
+                            content={item.level_of_study}
+                        />
+                    )}
+
+                    {/* ISCED Code */}
+                    {item.isced_code && (
+                        <InfoCard 
+                            title="ISCED Code"
+                            icon="🔢"
+                            content={item.isced_code}
+                        />
+                    )}
+                </div>
+
+                {/* Academic Information */}
+                <div style={{
+                    backgroundColor: 'white',
+                    borderRadius: '16px',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                    padding: '2rem',
+                    marginBottom: '2rem'
+                }}>
+                    <h2 style={{
+                        fontSize: '1.75rem',
+                        fontWeight: '600',
+                        color: '#213547',
+                        marginBottom: '1.5rem'
+                    }}>
+                        Academic Information
+                    </h2>
+
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                        gap: '1.5rem'
+                    }}>
+                        {/* University */}
+                        {item.university && (
+                            <DetailItem 
+                                label="University"
+                                value={item.university?.university_name || 'N/A'}
+                            />
+                        )}
+
+                        {/* First Level Structure */}
+                        {item.first_level_structure && (
+                            <DetailItem 
+                                label="First Level Structure"
+                                value={item.first_level_structure.name || 'N/A'}
+                            />
+                        )}
+
+                        {/* Second Level Structure */}
+                        {item.second_level_structure && (
+                            <DetailItem 
+                                label="Second Level Structure"
+                                value={item.second_level_structure?.name || item.second_level_structure?.name || 'N/A'}
+                            />
+                        )}
+
+                        {/* ERC Area */}
+                        {item.erc_area && (
+                            <DetailItem 
+                                label="ERC Area"
+                                value={item.erc_area}
+                            />
+                        )}
+
+                        {/* ERC Panel */}
+                        {item.erc_panel && (
+                            <DetailItem 
+                                label="ERC Panel"
+                                value={item.erc_panel.name || 'N/A'}
+                            />
+                        )}
+
+                        {/* ERC Keyword */}
+                        {item.erc_keyword && (
+                            <DetailItem 
+                                label="ERC Keyword"
+                                value={item.erc_keyword.name || 'N/A'}
+                            />
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// Helper Components
+function InfoCard({ title, icon, content }) {
+    return (
+        <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+            padding: '1.5rem',
+            height: '100%'
+        }}>
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                marginBottom: '1rem'
+            }}>
+                <span style={{ fontSize: '1.5rem' }}>{icon}</span>
+                <h3 style={{
+                    fontSize: '1.1rem',
+                    fontWeight: '600',
+                    color: '#213547',
+                    margin: 0
+                }}>
+                    {title}
+                </h3>
+            </div>
+            <p style={{
+                fontSize: '0.95rem',
+                lineHeight: '1.6',
+                color: '#495057',
+                margin: 0,
+                whiteSpace: 'pre-wrap'
+            }}>
+                {content}
+            </p>
+        </div>
+    );
+}
+
+function DetailItem({ label, value }) {
+    return (
+        <div>
+            <div style={{
+                fontSize: '0.85rem',
+                fontWeight: '600',
+                color: '#6c757d',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                marginBottom: '0.5rem'
+            }}>
+                {label}
+            </div>
+            <div style={{
+                fontSize: '1.05rem',
+                fontWeight: '500',
+                color: '#213547'
+            }}>
+                {value}
+            </div>
+        </div>
+    );
+}
+
+export default ItemDetail;

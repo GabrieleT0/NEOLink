@@ -7,6 +7,7 @@ import { AuthContext } from './components/AuthContext.jsx';
 import PersonalPage from './pages/personal_page.jsx';
 import CreateItem from './pages/create_item.jsx';
 import Items from './pages/items.jsx';
+import ItemDetail from './pages/item_detail.jsx';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           <Route basename={'/neolink'} path='/personal-page' element={<PersonalPage />} />
           <Route basename={'/neolink'} path="/create-item" element={<CreateItem />} />
           <Route basename={'/neolink'} path="/items" element={<Items />} />
+          <Route basename={'/neolink'} path="/items/:documentId" element={<ItemDetail />} />
         </Routes>
       </Router>
   );
