@@ -613,7 +613,17 @@ export interface ApiItemItem extends Struct.CollectionTypeSchema {
     discourse_category_id: Schema.Attribute.Integer;
     discourse_group_id: Schema.Attribute.Integer;
     end_date: Schema.Attribute.Date;
-    erc_keyword: Schema.Attribute.Integer;
+    erc_area: Schema.Attribute.Enumeration<
+      [
+        'Physical Sciences and Engineering (PE)',
+        'Life Sciences (LS)',
+        'Social Sciences and Humanities (SH)',
+      ]
+    >;
+    erc_keyword: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::erc-keyword.erc-keyword'
+    >;
     erc_panel: Schema.Attribute.Relation<
       'oneToOne',
       'api::erc-panel.erc-panel'
