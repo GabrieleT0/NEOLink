@@ -20,7 +20,7 @@ function CreateItem() {
         item_status: 'active',
         name: '',
         description: '',
-        category_id: '',
+        item_category: '',
         expiration: '',
         isced_code: '',
         erc_area: '',

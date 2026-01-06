@@ -13,7 +13,7 @@ function CreateItemForm({ token, initialData, onNext }) {
         item_status: initialData?.item_status || 'active',
         name: initialData?.name || '',
         description: initialData?.description || '',
-        category_id: initialData?.category_id || '',
+        item_category: initialData?.item_category || '',
         expiration: initialData?.expiration || '',
         isced_code: initialData?.isced_code || '',
         erc_area: initialData?.erc_area || '',
@@ -127,7 +127,7 @@ function CreateItemForm({ token, initialData, onNext }) {
             if (formData.university) {
                 try {
                     const response = await axios.get(
-                        `${base_url}/custom-first-level/?university=${formData.university}`
+                        `${base_url}/first-level-structures?filters[university][documentId][$eq]=${formData.university}`
                     );
                     setFirstLevelStructures(response.data.data || response.data || []);
                     console.log("First level structures:", response.data);
@@ -554,14 +554,14 @@ function CreateItemForm({ token, initialData, onNext }) {
                                 Category 
                             </label>
                             <select
-                                name="category_id"
-                                value={formData.category_id}
+                                name="item_category"
+                                value={formData.item_category}
                                 onChange={handleInputChange}
                                 style={selectStyle}
                             >
                                 <option value="">Select a category</option>
                                 {categories.map(cat => (
-                                    <option key={cat.id} value={cat.id}>
+                                    <option key={cat.documentId} value={cat.documentId}>
                                         {cat.attributes?.name || cat.name}
                                     </option>
                                 ))}
@@ -809,7 +809,7 @@ function CreateItemForm({ token, initialData, onNext }) {
                             >
                                 <option value="">Select university</option>
                                 {universities.map(uni => (
-                                    <option key={uni.id} value={uni.id}>
+                                    <option key={uni.documentId} value={uni.documentId}>
                                         {uni.attributes?.name || uni.university_name}
                                     </option>
                                 ))}
@@ -877,7 +877,7 @@ function CreateItemForm({ token, initialData, onNext }) {
                                     {formData.first_level_structure ? 'Select second level structure' : 'Select first level first'}
                                 </option>
                                 {secondLevelStructures.map(struct => (
-                                    <option key={struct.id} value={struct.id}>
+                                    <option key={struct.documentId} value={struct.documentId}>
                                         {struct.attributes?.name || struct.name}
                                     </option>
                                 ))}
