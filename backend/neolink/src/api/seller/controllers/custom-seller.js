@@ -1,5 +1,6 @@
 const { randomBytes } = require("node:crypto");
 const axios = require('axios');
+const seller = require("./seller");
 
 module.exports = {
     async create(ctx, next){
@@ -12,19 +13,21 @@ module.exports = {
             const currentTimeStamp = new Date().getTime().toString();
             let entry;
             entry = await strapi.db.query('api::seller.seller').findOne({
-                select: ['id', 'email'],
+                select: ['documentId', 'email'],
                 where: {
                     email: email
                 }
             })
-            if (entry){
-                entry = await strapi.entityService.update("api::seller.seller", entry.id,{
-                    data:{
+            if (entry) {
+                let seller_documentId = entry.documentId
+                entry = await strapi.documents("api::seller.seller").update({
+                    documentId: seller_documentId,
+                    data: {
                         OTP: otp,
                         otp_active: true,
                         otp_generation_timestamp: currentTimeStamp
                     }
-                })
+                });
             } else {
                 let full_name = "";
                 let virtual_cafe_id = false;
@@ -118,26 +121,31 @@ module.exports = {
             const email = ctx.request.body.email
             const otp = ctx.request.body.otp
             let entry
+            
             entry = await strapi.db.query('api::seller.seller').findOne({
-                select: ['id', 'email', 'full_name', 'research_group_link', 'personal_page_link', 'university_name', 'first_level_structure', 'second_level_structure', 'orcid_link', 'research_units_tours', 'specific_research_units_tours', 'virtual_cafe_id', 'orh_id'],
+                select: ['documentId', 'email', 'full_name', 'research_group_link', 'personal_page_link', 'university_name', 'first_level_structure', 'second_level_structure', 'orcid_link', 'research_units_tours', 'specific_research_units_tours', 'virtual_cafe_id', 'orh_id'],
                 where:{
                     email : email,
                     OTP : otp,
                     otp_active: true
                 }
             })
+            
             if (entry){
-                entry = await strapi.entityService.update("api::seller.seller", entry.id,{
+                let seller_documentId = entry.documentId
+                entry = await strapi.documents("api::seller.seller").update({
+                    documentId: seller_documentId,
                     data:{
-                        first_access: true, //in this way I can delete email from db that haven't done the first access
+                        first_access: true,
                         otp_active: false
                     }
                 })
             } else {
                 return ctx.response.unauthorized('You are not authorized to access this resource, you must authenticate yourself')
             }
+            
             const token = jwt.sign({
-                user_id: entry.id, 
+                user_id: entry.documentId, 
                 email: entry.email,
                 full_name: entry.full_name,
                 research_group_link: entry.research_group_link,
@@ -151,6 +159,7 @@ module.exports = {
                 virtual_cafe_id: entry.virtual_cafe_id,
                 orh_id: entry.orh_id
             }, process.env.JWT_SECRET_CUSTOM_AUTH, {expiresIn: process.env.JWT_EXPIRES_CUSTOM_AUTH_IN})
+            
             ctx.send({ token })
         } catch (error){
             console.log(error)

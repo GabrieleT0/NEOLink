@@ -658,6 +658,7 @@ export interface ApiItemItem extends Struct.CollectionTypeSchema {
       'oneToOne',
       'api::second-level-structure.second-level-structure'
     >;
+    seller: Schema.Attribute.Relation<'oneToOne', 'api::seller.seller'>;
     seller_name: Schema.Attribute.String;
     speakers: Schema.Attribute.Text;
     start_date: Schema.Attribute.Date;

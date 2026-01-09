@@ -1,10 +1,12 @@
 const axios = require('axios');
+const seller = require('../../seller/controllers/seller');
 module.exports = {
     async create(ctx, next){
         try{
             const { item_status, name, description, item_category, expiration, isced_code, erc_area, erc_panel, erc_keyword, start_date, learning_outcomes, multimediarial_material_provided, end_date, languages, speakers, pedagogical_objectives, level_of_study, university, first_level_structure, second_level_structure, offered_by, cover} = ctx.request.body;
             const {group_name, group_display_name, group_description, category_name, category_color} = ctx.request.body;
             const email = ctx.request.body.data.email
+            const user_id = ctx.request.body.data.user_id
             try{
                 let virtual_cafe_username = "";
                 const response_profile = await axios.get(`${process.env.DISCOURSE_URL}/admin/users/list/active.json`, {
@@ -93,6 +95,7 @@ module.exports = {
                 }
                 let entry = await strapi.entityService.create("api::item.item", {
                 data:{
+                    seller: user_id.toString(),
                     item_status,
                     name,
                     description,
@@ -117,6 +120,7 @@ module.exports = {
                     discourse_group_id: discourse_group_id ? parseInt(discourse_group_id) : null,
                     discourse_category_id: discourse_category_id ? parseInt(discourse_category_id) : null,
                     cover: cover ? parseInt(cover) : null,
+
                 }
             });
             const topic_payload = {

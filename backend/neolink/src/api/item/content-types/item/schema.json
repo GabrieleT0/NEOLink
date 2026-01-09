@@ -110,6 +110,11 @@
       "type": "relation",
       "relation": "oneToOne",
       "target": "api::item-category.item-category"
+    },
+    "seller": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::seller.seller"
     }
   }
 }
