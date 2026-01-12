@@ -635,7 +635,7 @@ export interface ApiItemItem extends Struct.CollectionTypeSchema {
       'api::first-level-structure.first-level-structure'
     >;
     interested_users: Schema.Attribute.Relation<
-      'manyToOne',
+      'manyToMany',
       'api::seller.seller'
     >;
     isced_code: Schema.Attribute.String;
@@ -724,7 +724,7 @@ export interface ApiSellerSeller extends Struct.CollectionTypeSchema {
     first_access: Schema.Attribute.Boolean;
     first_level_structure: Schema.Attribute.String;
     full_name: Schema.Attribute.String;
-    interested_items: Schema.Attribute.Relation<'oneToMany', 'api::item.item'>;
+    interested_items: Schema.Attribute.Relation<'manyToMany', 'api::item.item'>;
     linkedin_link: Schema.Attribute.String;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<

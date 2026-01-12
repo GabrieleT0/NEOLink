@@ -95,12 +95,12 @@
       "relation": "oneToOne",
       "target": "api::university.university"
     },
-    "interested_users": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::seller.seller",
-      "inversedBy": "interested_items"
-    },
+  "interested_users": {
+    "type": "relation",
+    "relation": "manyToMany",
+    "target": "api::seller.seller",
+    "inversedBy": "interested_items"
+  },
     "second_level_structure": {
       "type": "relation",
       "relation": "oneToOne",
