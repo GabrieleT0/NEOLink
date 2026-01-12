@@ -8,7 +8,7 @@ module.exports = {
             const {group_name, group_display_name, group_description, category_name, category_color} = ctx.request.body;
             const email = ctx.request.body.data.email
             const user_id = ctx.request.body.data.user_id
-
+            console.log("ctx.request.body:", ctx.request.body);
             try{
                 let virtual_cafe_username = "";
                 const response_profile = await axios.get(`${process.env.DISCOURSE_URL}/admin/users/list/active.json`, {
@@ -143,11 +143,13 @@ module.exports = {
                             { documentId: first_level_structure  }
                         ]
                     },
-                    second_level_structure: {
-                        connect: [
-                            { documentId: second_level_structure  }
-                        ]
-                    },
+                    ...(second_level_structure && {
+                        second_level_structure: {
+                            connect: [
+                                { documentId: second_level_structure }
+                            ]
+                        }
+                    }),
                     seller_name: offered_by,
                     discourse_group_id: discourse_group_id ? parseInt(discourse_group_id) : null,
                     discourse_category_id: discourse_category_id ? parseInt(discourse_category_id) : null,
