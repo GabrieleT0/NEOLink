@@ -250,19 +250,15 @@ module.exports = {
                 }
             } else {
                     try{
-                        const response = await axios.get(`${process.env.DISCOURSE_URL}/admin/users/list/active.json`, {
-                            params: {
-                                id: user_entry.virtual_cafe_id,
-                                show_emails: true
-                            },
+                        const response = await axios.get(`${process.env.DISCOURSE_URL}/admin/users/${user_entry.virtual_cafe_id}`, {
                             headers: {
                                 'Api-Key': process.env.DISCOURSE_API_TOKEN,
                                 'Api-Username': 'system'
                             }
                     });
                     const virtual_cafe_profile = response.data;
-                    if (virtual_cafe_profile && virtual_cafe_profile.length > 0){
-                        virtual_cafe_username = virtual_cafe_profile[0].username || "";
+                    if (virtual_cafe_profile){
+                        virtual_cafe_username = virtual_cafe_profile.username || "";
                     } 
                     } catch (error){
                         console.log("Error fetching Discourse profile for email: " + email);
@@ -309,6 +305,109 @@ module.exports = {
             }
         } else {
             return ctx.notFound('Item or discourse group not found');
+        }
+    },
+    async removeInterest(ctx, next) {
+        const email = ctx.request.body.data.email;
+        const user_id = ctx.request.body.data.user_id;
+        const { item_id } = ctx.request.body;
+
+        try {
+            const entry = await strapi.db.query("api::item.item").findOne({
+                select: ['discourse_group_id'],
+                where: { documentId: item_id },
+                populate: {
+                    interested_users: {
+                        select: ['documentId']
+                    }
+                }
+            });
+
+            if (!entry || !entry.discourse_group_id) {
+                return ctx.notFound('Item or discourse group not found');
+            }
+
+            // Check if user is actually interested
+            const isInterested = entry.interested_users?.some(
+                user => user.documentId === user_id
+            );
+
+            if (!isInterested) {
+                return ctx.send({ message: 'User is not interested in this item' });
+            }
+
+            const user_entry = await strapi.db.query("api::seller.seller").findOne({
+                select: ['virtual_cafe_id'],
+                where: { documentId: user_id },
+            });
+
+            let virtual_cafe_username = "";
+            console.log("User entry:", user_entry);
+            console.log(user_entry.virtual_cafe_id);
+            if (user_entry && user_entry.virtual_cafe_id) {
+                try {
+                    const response = await axios.get(`${process.env.DISCOURSE_URL}/admin/users/${user_entry.virtual_cafe_id}.json`, {
+                        headers: {
+                            'Api-Key': process.env.DISCOURSE_API_TOKEN,
+                            'Api-Username': 'system'
+                        }
+                    });
+                    console.log("Discourse profile response data:", response.data);
+                    const virtual_cafe_profile = response.data;
+                    console.log("Discourse profile response:", virtual_cafe_profile);
+                    if (virtual_cafe_profile) {
+                        virtual_cafe_username = virtual_cafe_profile.username || "";
+                    }
+                } catch (error) {
+                    console.log("Error fetching Discourse profile: " + error);
+                }
+            } else {
+                virtual_cafe_username = email.split('@')[0];
+            }
+
+            // Remove user from Discourse group
+            try {
+                const virtual_cafe_response = await axios.delete(
+                    `${process.env.DISCOURSE_URL}/groups/${entry.discourse_group_id}/members.json`,
+                    {
+                        params: { username: virtual_cafe_username },
+                        headers: {
+                            'Api-Key': process.env.DISCOURSE_API_TOKEN,
+                            'Api-Username': 'system'
+                        }
+                    }
+                );
+
+                if (virtual_cafe_response.status === 200) {
+                    // Remove user from interested_users relation
+                    try {
+                        await strapi.documents("api::item.item").update({
+                            documentId: item_id,
+                            data: {
+                                interested_users: {
+                                    disconnect: [{ documentId: user_id }]
+                                }
+                            }
+                        });
+
+                        await strapi.documents("api::item.item").publish({
+                            documentId: item_id
+                        });
+                        
+                        console.log('User removed from interested_users relation');
+                        return ctx.send({ message: 'User removed from the group successfully' });
+                    } catch (error) {
+                        console.log("Error removing user from interested_users relation: " + error);
+                        return ctx.internalServerError('Error removing user from interested_users relation');
+                    }
+                }
+            } catch (error) {
+                console.log("Error removing user from the group: " + error);
+                return ctx.internalServerError('Error removing user from the group');
+            }
+        } catch (error) {
+            console.log(error);
+            return ctx.internalServerError(error.message);
         }
     }
 }

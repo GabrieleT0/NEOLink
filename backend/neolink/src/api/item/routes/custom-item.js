@@ -15,6 +15,14 @@ module.exports = {
             config:{
                 middlewares: ["global::otp-auth"]
             }
+        },
+        {
+            method: 'POST',
+            path: '/custom-item/remove-interest/',
+            handler: 'custom-item.removeInterest',
+            config:{
+                middlewares: ["global::otp-auth"]
+            }
         }
     ]
 }

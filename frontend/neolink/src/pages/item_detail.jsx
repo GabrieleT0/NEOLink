@@ -63,14 +63,16 @@ function ItemDetail() {
             const itemResponse = await axios.get(`${base_url}/items/${documentId}?populate=*`);
             const itemData = itemResponse.data.data;
             setItem(itemData);
+            console.log(itemData)
 
-        // Check if current user is already interested
-        if (userData && itemData.interested_users && Array.isArray(itemData.interested_users)) {
-            const userIsInterested = itemData.interested_users.some(
-                user => user.documentId === userData.user_id
-            );
-            setIsInterested(userIsInterested);
-        }
+            // Check if current user is already interested
+            if (userData && itemData.interested_users && Array.isArray(itemData.interested_users)) {
+                const userIsInterested = itemData.interested_users.some(
+                    user => user.documentId === userData.user_id
+                );
+                setIsInterested(userIsInterested);
+            }
+            
             // Fetch related data in parallel
             const promises = [];
 
@@ -129,6 +131,8 @@ function ItemDetail() {
                     type: 'success',
                     text: response.data.message || 'You have been added to the Virtual Cafè discussion group!'
                 });
+                // Refresh item data to update interested_users
+                await fetchItemDetails();
                 // Clear message after 3 seconds
                 setTimeout(() => setInterestMessage(null), 3000);
             }
@@ -136,6 +140,58 @@ function ItemDetail() {
             console.error("Error expressing interest:", err);
             
             let errorText = 'Failed to record interest. Please try again.';
+            if (err.response?.status === 401) {
+                errorText = 'Session expired. Please log in again.';
+            } else if (err.response?.data?.message) {
+                errorText = err.response.data.message;
+            }
+
+            setInterestMessage({
+                type: 'error',
+                text: errorText
+            });
+
+            // Clear error message after 5 seconds
+            setTimeout(() => setInterestMessage(null), 5000);
+        } finally {
+            setInterestLoading(false);
+        }
+    };
+
+    const handleRemoveInterestClick = async () => {
+        if (!token) {
+            setInterestMessage({
+                type: 'error',
+                text: 'Please log in to remove interest'
+            });
+            setTimeout(() => setInterestMessage(null), 3000);
+            return;
+        }
+
+        setInterestLoading(true);
+        setInterestMessage(null);
+
+        try {
+            const response = await axios.post(`${base_url}/custom-item/remove-interest/`, {
+                item_id: documentId,
+                token: token,
+            });
+            
+            if (response.status === 200) {
+                setIsInterested(false);
+                setInterestMessage({
+                    type: 'success',
+                    text: response.data.message || 'You have been removed from the Virtual Cafè discussion group.'
+                });
+                // Refresh item data to update interested_users
+                await fetchItemDetails();
+                // Clear message after 3 seconds
+                setTimeout(() => setInterestMessage(null), 3000);
+            }
+        } catch (err) {
+            console.error("Error removing interest:", err);
+            
+            let errorText = 'Failed to remove interest. Please try again.';
             if (err.response?.status === 401) {
                 errorText = 'Session expired. Please log in again.';
             } else if (err.response?.data?.message) {
@@ -413,64 +469,138 @@ function ItemDetail() {
                             {item.item_status}
                         </span>
 
-                        {/* I'm Interested Button */}
+                        {/* Interest Buttons */}
                         {token && userData && item.seller && userData.user_id !== item.seller.documentId && (
-                            <button
-                                onClick={handleInterestClick}
-                                disabled={interestLoading || isInterested}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem',
-                                    padding: '0.75rem 1.5rem',
-                                    backgroundColor: isInterested ? '#28a745' : '#7c6fd6',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    cursor: interestLoading || isInterested ? 'not-allowed' : 'pointer',
-                                    fontWeight: '600',
-                                    fontSize: '1rem',
-                                    transition: 'all 0.3s',
-                                    opacity: interestLoading || isInterested ? 0.7 : 1,
-                                    boxShadow: '0 2px 8px rgba(124, 111, 214, 0.3)'
-                                }}
-                                onMouseEnter={(e) => {
-                                    if (!interestLoading && !isInterested) {
-                                        e.target.style.transform = 'translateY(-2px)';
-                                        e.target.style.boxShadow = '0 4px 12px rgba(124, 111, 214, 0.4)';
-                                    }
-                                }}
-                                onMouseLeave={(e) => {
-                                    if (!interestLoading && !isInterested) {
-                                        e.target.style.transform = 'translateY(0)';
-                                        e.target.style.boxShadow = '0 2px 8px rgba(124, 111, 214, 0.3)';
-                                    }
-                                }}
-                            >
-                                {interestLoading ? (
-                                    <>
-                                        <div style={{
-                                            width: '1rem',
-                                            height: '1rem',
-                                            border: '2px solid #ffffff',
-                                            borderTop: '2px solid transparent',
-                                            borderRadius: '50%',
-                                            animation: 'spin 0.8s linear infinite'
-                                        }}></div>
-                                        <span>Processing...</span>
-                                    </>
-                                ) : isInterested ? (
-                                    <>
-                                        <span>✓</span>
-                                        <span>Already Interested</span>
-                                    </>
+                            <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                {!isInterested ? (
+                                    <button
+                                        onClick={handleInterestClick}
+                                        disabled={interestLoading}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.5rem',
+                                            padding: '0.75rem 1.5rem',
+                                            backgroundColor: '#7c6fd6',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            cursor: interestLoading ? 'not-allowed' : 'pointer',
+                                            fontWeight: '600',
+                                            fontSize: '1rem',
+                                            transition: 'all 0.3s',
+                                            opacity: interestLoading ? 0.7 : 1,
+                                            boxShadow: '0 2px 8px rgba(124, 111, 214, 0.3)'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            if (!interestLoading) {
+                                                e.target.style.transform = 'translateY(-2px)';
+                                                e.target.style.boxShadow = '0 4px 12px rgba(124, 111, 214, 0.4)';
+                                            }
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            if (!interestLoading) {
+                                                e.target.style.transform = 'translateY(0)';
+                                                e.target.style.boxShadow = '0 2px 8px rgba(124, 111, 214, 0.3)';
+                                            }
+                                        }}
+                                    >
+                                        {interestLoading ? (
+                                            <>
+                                                <div style={{
+                                                    width: '1rem',
+                                                    height: '1rem',
+                                                    border: '2px solid #ffffff',
+                                                    borderTop: '2px solid transparent',
+                                                    borderRadius: '50%',
+                                                    animation: 'spin 0.8s linear infinite'
+                                                }}></div>
+                                                <span>Processing...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span>💡</span>
+                                                <span>I'm Interested</span>
+                                            </>
+                                        )}
+                                    </button>
                                 ) : (
                                     <>
-                                        <span>💡</span>
-                                        <span>I'm Interested</span>
+                                        <button
+                                            disabled
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.5rem',
+                                                padding: '0.75rem 1.5rem',
+                                                backgroundColor: '#28a745',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                cursor: 'not-allowed',
+                                                fontWeight: '600',
+                                                fontSize: '1rem',
+                                                opacity: 0.9,
+                                                boxShadow: '0 2px 8px rgba(40, 167, 69, 0.3)'
+                                            }}
+                                        >
+                                            <span>✓</span>
+                                            <span>Already Interested</span>
+                                        </button>
+                                        <button
+                                            onClick={handleRemoveInterestClick}
+                                            disabled={interestLoading}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.5rem',
+                                                padding: '0.75rem 1.5rem',
+                                                backgroundColor: '#dc3545',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                cursor: interestLoading ? 'not-allowed' : 'pointer',
+                                                fontWeight: '600',
+                                                fontSize: '1rem',
+                                                transition: 'all 0.3s',
+                                                opacity: interestLoading ? 0.7 : 1,
+                                                boxShadow: '0 2px 8px rgba(220, 53, 69, 0.3)'
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                if (!interestLoading) {
+                                                    e.target.style.transform = 'translateY(-2px)';
+                                                    e.target.style.boxShadow = '0 4px 12px rgba(220, 53, 69, 0.4)';
+                                                }
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                if (!interestLoading) {
+                                                    e.target.style.transform = 'translateY(0)';
+                                                    e.target.style.boxShadow = '0 2px 8px rgba(220, 53, 69, 0.3)';
+                                                }
+                                            }}
+                                        >
+                                            {interestLoading ? (
+                                                <>
+                                                    <div style={{
+                                                        width: '1rem',
+                                                        height: '1rem',
+                                                        border: '2px solid #ffffff',
+                                                        borderTop: '2px solid transparent',
+                                                        borderRadius: '50%',
+                                                        animation: 'spin 0.8s linear infinite'
+                                                    }}></div>
+                                                    <span>Processing...</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span>✕</span>
+                                                    <span>Remove Interest</span>
+                                                </>
+                                            )}
+                                        </button>
                                     </>
                                 )}
-                            </button>
+                            </div>
                         )}
                     </div>
 
@@ -506,6 +636,20 @@ function ItemDetail() {
                                     </div>
                                 </div>
                             </div>
+                        )}
+
+                        {item.createdAt && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <span style={{ fontSize: '1.2rem' }}>📅</span>
+                                    <div>
+                                        <div style={{ fontSize: '0.75rem', color: '#6c757d', fontWeight: '600' }}>
+                                            Added to Platform
+                                        </div>
+                                        <div style={{ fontWeight: '600', color: '#495057' }}>
+                                            {formatDate(item.createdAt)}
+                                        </div>
+                                    </div>
+                                </div>
                         )}
 
                         {item.languages && (
