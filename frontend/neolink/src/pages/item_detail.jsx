@@ -298,6 +298,19 @@ function ItemDetail() {
         return 'https://placehold.co/1200x400?text=No+Cover+Image';
     };
 
+    // Helper function to format ISCED display
+    const formatIscedField = (field) => {
+        if (!field) return null;
+        const code = field.code || '';
+        const description = field.description || field.attributes?.description || '';
+        return code && description ? `${code} - ${description}` : (code || description || null);
+    };
+
+    // Check if any ISCED field is present
+    const hasIscedData = () => {
+        return item?.isced_broad_field || item?.isced_narrow_field || item?.isced_detailed_field;
+    };
+
     if (loading) {
         return (
             <div style={{ 
@@ -917,16 +930,145 @@ function ItemDetail() {
                             content={item.level_of_study}
                         />
                     )}
-
-                    {/* ISCED Code */}
-                    {item.isced_code && (
-                        <InfoCard 
-                            title="ISCED Code"
-                            icon="🔢"
-                            content={item.isced_code}
-                        />
-                    )}
                 </div>
+
+                {/* ISCED Classification Section */}
+                {hasIscedData() && (
+                    <div style={{
+                        backgroundColor: 'white',
+                        borderRadius: '16px',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                        padding: '2rem',
+                        marginBottom: '2rem'
+                    }}>
+                        <h2 style={{
+                            fontSize: '1.75rem',
+                            fontWeight: '600',
+                            color: '#213547',
+                            marginBottom: '1.5rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.75rem'
+                        }}>
+                            <span>🔢</span>
+                            ISCED Classification
+                        </h2>
+
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '1rem'
+                        }}>
+                            {/* ISCED Hierarchy Visualization */}
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '0.5rem'
+                            }}>
+                                {/* Broad Field */}
+                                {item.isced_broad_field && (
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '1rem'
+                                    }}>
+                                        <div style={{
+                                            width: '120px',
+                                            padding: '0.5rem 1rem',
+                                            backgroundColor: '#7c6fd6',
+                                            color: 'white',
+                                            borderRadius: '8px',
+                                            fontSize: '0.85rem',
+                                            fontWeight: '600',
+                                            textAlign: 'center'
+                                        }}>
+                                            Broad Field
+                                        </div>
+                                        <div style={{
+                                            flex: 1,
+                                            padding: '0.75rem 1rem',
+                                            backgroundColor: '#f0f0ff',
+                                            borderRadius: '8px',
+                                            border: '2px solid #7c6fd6',
+                                            color: '#495057',
+                                            fontWeight: '500'
+                                        }}>
+                                            {formatIscedField(item.isced_broad_field)}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Narrow Field */}
+                                {item.isced_narrow_field && (
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '1rem',
+                                        marginLeft: '2rem'
+                                    }}>
+                                        <div style={{
+                                            width: '120px',
+                                            padding: '0.5rem 1rem',
+                                            backgroundColor: '#5a4fcf',
+                                            color: 'white',
+                                            borderRadius: '8px',
+                                            fontSize: '0.85rem',
+                                            fontWeight: '600',
+                                            textAlign: 'center'
+                                        }}>
+                                            Narrow Field
+                                        </div>
+                                        <div style={{
+                                            flex: 1,
+                                            padding: '0.75rem 1rem',
+                                            backgroundColor: '#e8e6f8',
+                                            borderRadius: '8px',
+                                            border: '2px solid #5a4fcf',
+                                            color: '#495057',
+                                            fontWeight: '500'
+                                        }}>
+                                            {formatIscedField(item.isced_narrow_field)}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Detailed Field */}
+                                {item.isced_detailed_field && (
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '1rem',
+                                        marginLeft: '4rem'
+                                    }}>
+                                        <div style={{
+                                            width: '120px',
+                                            padding: '0.5rem 1rem',
+                                            backgroundColor: '#4a3fc0',
+                                            color: 'white',
+                                            borderRadius: '8px',
+                                            fontSize: '0.85rem',
+                                            fontWeight: '600',
+                                            textAlign: 'center'
+                                        }}>
+                                            Detailed Field
+                                        </div>
+                                        <div style={{
+                                            flex: 1,
+                                            padding: '0.75rem 1rem',
+                                            backgroundColor: '#e0ddf5',
+                                            borderRadius: '8px',
+                                            border: '2px solid #4a3fc0',
+                                            color: '#495057',
+                                            fontWeight: '500'
+                                        }}>
+                                            {formatIscedField(item.isced_detailed_field)}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Academic Information */}
                 <div style={{

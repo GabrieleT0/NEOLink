@@ -17,7 +17,9 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
         description: initialData?.description || '',
         item_category: initialData?.item_category || '',
         expiration: initialData?.expiration || '',
-        isced_code: initialData?.isced_code || '',
+        isced_broad_field: initialData?.isced_broad_field || '',
+        isced_narrow_field: initialData?.isced_narrow_field || '',
+        isced_detailed_field: initialData?.isced_detailed_field || '',
         erc_area: initialData?.erc_area || '',
         erc_panel: initialData?.erc_panel || '',
         erc_keyword: initialData?.erc_keyword || '',
@@ -45,6 +47,11 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
     const [secondLevelStructures, setSecondLevelStructures] = useState([]);
     const [ercPanels, setErcPanels] = useState([]);
     const [ercKeywords, setErcKeywords] = useState([]);
+    
+    // ISCED hierarchical dropdowns
+    const [iscedBroadFields, setIscedBroadFields] = useState([]);
+    const [iscedNarrowFields, setIscedNarrowFields] = useState([]);
+    const [iscedDetailedFields, setIscedDetailedFields] = useState([]);
     
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -81,12 +88,16 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                 console.log("Decoded token:", decoded);
                 setUserData(decoded);
 
-                const [universitiesRes] = await Promise.all([
-                    axios.get(`${base_url}/universities`)
+                const [universitiesRes, iscedBroadRes] = await Promise.all([
+                    axios.get(`${base_url}/universities`),
+                    axios.get(`${base_url}/isced-broad-fields`)
                 ]);
 
                 console.log("Universities:", universitiesRes.data);
+                console.log("ISCED Broad Fields:", iscedBroadRes.data);
+                
                 setUniversities(universitiesRes.data.data || universitiesRes.data || []);
+                setIscedBroadFields(iscedBroadRes.data.data || iscedBroadRes.data || []);
 
                 // Only set from token if initialData doesn't have values
                 if (!initialData?.university) {
@@ -192,6 +203,84 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
 
         loadSecondLevelStructures();
     }, [formData.first_level_structure]);
+
+    // Load ISCED Narrow Fields based on selected Broad Field
+    useEffect(() => {
+        const loadIscedNarrowFields = async () => {
+            if (formData.isced_broad_field) {
+                try {
+                    const response = await axios.get(
+                        `${base_url}/isced-narrow-fields?filters[isced_broad_field][documentId][$eq]=${formData.isced_broad_field}&populate=isced_broad_field`
+                    );
+                    console.log("ISCED Narrow Fields:", response.data);
+                    setIscedNarrowFields(response.data.data || response.data || []);
+                    
+                    // Validate current selection
+                    if (formData.isced_narrow_field) {
+                        const isValid = (response.data.data || response.data || [])
+                            .some(field => field.documentId === formData.isced_narrow_field);
+                        if (!isValid) {
+                            setFormData(prev => ({
+                                ...prev,
+                                isced_narrow_field: '',
+                                isced_detailed_field: ''
+                            }));
+                        }
+                    }
+                } catch (err) {
+                    console.error("Error loading ISCED narrow fields:", err);
+                    setIscedNarrowFields([]);
+                }
+            } else {
+                setIscedNarrowFields([]);
+                setFormData(prev => ({
+                    ...prev,
+                    isced_narrow_field: '',
+                    isced_detailed_field: ''
+                }));
+            }
+        };
+
+        loadIscedNarrowFields();
+    }, [formData.isced_broad_field]);
+
+    // Load ISCED Detailed Fields based on selected Narrow Field
+    useEffect(() => {
+        const loadIscedDetailedFields = async () => {
+            if (formData.isced_narrow_field) {
+                try {
+                    const response = await axios.get(
+                        `${base_url}/isced-detailed-fields?filters[isced_narrow_field][documentId][$eq]=${formData.isced_narrow_field}&populate=isced_narrow_field`
+                    );
+                    console.log("ISCED Detailed Fields:", response.data);
+                    setIscedDetailedFields(response.data.data || response.data || []);
+                    
+                    // Validate current selection
+                    if (formData.isced_detailed_field) {
+                        const isValid = (response.data.data || response.data || [])
+                            .some(field => field.documentId === formData.isced_detailed_field);
+                        if (!isValid) {
+                            setFormData(prev => ({
+                                ...prev,
+                                isced_detailed_field: ''
+                            }));
+                        }
+                    }
+                } catch (err) {
+                    console.error("Error loading ISCED detailed fields:", err);
+                    setIscedDetailedFields([]);
+                }
+            } else {
+                setIscedDetailedFields([]);
+                setFormData(prev => ({
+                    ...prev,
+                    isced_detailed_field: ''
+                }));
+            }
+        };
+
+        loadIscedDetailedFields();
+    }, [formData.isced_narrow_field]);
 
     // Load ERC panels based on selected ERC area
     useEffect(() => {
@@ -643,18 +732,100 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                                     </h3>
                                 </div>
 
+                                {/* ISCED Code Hierarchical Selection */}
                                 {shouldShowField('isced_code', categoryName) && (
-                                    <div style={{ marginBottom: '1.5rem' }}>
-                                        <label style={labelStyle}>ISCED Code</label>
-                                        <input
-                                            type="text"
-                                            name="isced_code"
-                                            value={formData.isced_code}
-                                            onChange={handleInputChange}
-                                            style={inputStyle}
-                                            placeholder="Enter ISCED code"
-                                        />
-                                    </div>
+                                    <>
+                                        <div style={{ 
+                                            display: 'grid',
+                                            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                                            gap: '1.5rem',
+                                            marginBottom: '1.5rem'
+                                        }}>
+                                            {/* ISCED Broad Field */}
+                                            <div>
+                                                <label style={labelStyle}>ISCED Broad Field</label>
+                                                <select
+                                                    name="isced_broad_field"
+                                                    value={formData.isced_broad_field}
+                                                    onChange={handleInputChange}
+                                                    style={selectStyle}
+                                                >
+                                                    <option value="">Select Broad Field</option>
+                                                    {iscedBroadFields.map(field => (
+                                                        <option key={field.documentId} value={field.documentId}>
+                                                            {field.code} - {field.attributes?.description || field.description}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <small style={{ 
+                                                    display: 'block',
+                                                    marginTop: '0.25rem',
+                                                    fontSize: '0.85rem',
+                                                    color: '#6c757d'
+                                                }}>
+                                                    Select broad field first to filter narrow fields
+                                                </small>
+                                            </div>
+
+                                            {/* ISCED Narrow Field */}
+                                            <div>
+                                                <label style={labelStyle}>ISCED Narrow Field</label>
+                                                <select
+                                                    name="isced_narrow_field"
+                                                    value={formData.isced_narrow_field}
+                                                    onChange={handleInputChange}
+                                                    style={{
+                                                        ...selectStyle,
+                                                        cursor: !formData.isced_broad_field ? 'not-allowed' : 'pointer',
+                                                        opacity: !formData.isced_broad_field ? 0.6 : 1
+                                                    }}
+                                                    disabled={!formData.isced_broad_field}
+                                                >
+                                                    <option value="">
+                                                        {formData.isced_broad_field ? 'Select Narrow Field' : 'Select broad field first'}
+                                                    </option>
+                                                    {iscedNarrowFields.map(field => (
+                                                        <option key={field.documentId} value={field.documentId}>
+                                                            {field.code} - {field.attributes?.description || field.description}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <small style={{ 
+                                                    display: 'block',
+                                                    marginTop: '0.25rem',
+                                                    fontSize: '0.85rem',
+                                                    color: '#6c757d'
+                                                }}>
+                                                    Select narrow field to filter detailed fields
+                                                </small>
+                                            </div>
+
+                                            {/* ISCED Detailed Field */}
+                                            <div>
+                                                <label style={labelStyle}>ISCED Detailed Field</label>
+                                                <select
+                                                    name="isced_detailed_field"
+                                                    value={formData.isced_detailed_field}
+                                                    onChange={handleInputChange}
+                                                    style={{
+                                                        ...selectStyle,
+                                                        cursor: !formData.isced_narrow_field ? 'not-allowed' : 'pointer',
+                                                        opacity: !formData.isced_narrow_field ? 0.6 : 1
+                                                    }}
+                                                    disabled={!formData.isced_narrow_field}
+                                                >
+                                                    <option value="">
+                                                        {formData.isced_narrow_field ? 'Select Detailed Field' : 'Select narrow field first'}
+                                                    </option>
+                                                    {iscedDetailedFields.map(field => (
+                                                        <option key={field.documentId} value={field.documentId}>
+                                                            {field.code} - {field.attributes?.description || field.description}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </>
                                 )}
 
                                 {shouldShowField('level_of_study', categoryName) && (

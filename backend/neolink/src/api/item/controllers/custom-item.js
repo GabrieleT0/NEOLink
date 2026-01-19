@@ -6,10 +6,37 @@ const { disconnect } = require('cluster');
 module.exports = {
     async create(ctx, next){
         try{
-            const { item_status, name, description, item_category, expiration, isced_code, erc_area, erc_panel, erc_keyword, start_date, learning_outcomes, multimediarial_material_provided, end_date, languages, speakers, pedagogical_objectives, level_of_study, university, first_level_structure, second_level_structure, offered_by, cover} = ctx.request.body;
+            const { 
+                item_status, 
+                name, 
+                description, 
+                item_category, 
+                expiration, 
+                isced_broad_field,
+                isced_narrow_field,
+                isced_detailed_field,
+                erc_area, 
+                erc_panel, 
+                erc_keyword, 
+                start_date, 
+                learning_outcomes, 
+                multimediarial_material_provided, 
+                end_date, 
+                languages, 
+                speakers, 
+                pedagogical_objectives, 
+                level_of_study, 
+                university, 
+                first_level_structure, 
+                second_level_structure, 
+                offered_by, 
+                cover
+            } = ctx.request.body;
+            
             const {group_name, group_display_name, group_description, category_name, category_color} = ctx.request.body;
             const email = ctx.request.body.data.email
             const user_id = ctx.request.body.data.user_id
+            
             try{
                 let virtual_cafe_username = "";
                 const response_profile = await axios.get(`${process.env.DISCOURSE_URL}/admin/users/list/active.json`, {
@@ -119,58 +146,84 @@ module.exports = {
                     });
                     discourse_category_id = response_cat.data.category.id;
                 }
+                
                 let entry = await strapi.entityService.create("api::item.item", {
-                data:{
-                    seller: user_id.toString(),
-                    item_status,
-                    name,
-                    description,
-                    item_category,
-                    expiration,
-                    isced_code,
-                    erc_area,
-                    erc_panel,
-                    erc_keyword: erc_keyword,
-                    start_date,
-                    learning_outcomes,
-                    multimedial_material_provided : multimediarial_material_provided,
-                    end_date,
-                    languages,
-                    speakers,
-                    pedagogical_objectives,
-                    level_of_study,
-                    university,
-                    first_level_structure: {
-                        connect: [
-                            { documentId: first_level_structure  }
-                        ]
-                    },
-                    ...(second_level_structure && {
-                        second_level_structure: {
+                    data:{
+                        seller: user_id.toString(),
+                        item_status,
+                        name,
+                        description,
+                        item_category,
+                        expiration,
+                        erc_area,
+                        erc_panel,
+                        erc_keyword: erc_keyword,
+                        start_date,
+                        learning_outcomes,
+                        multimedial_material_provided: multimediarial_material_provided,
+                        end_date,
+                        languages,
+                        speakers,
+                        pedagogical_objectives,
+                        level_of_study,
+                        university,
+                        // First level structure relation
+                        first_level_structure: {
                             connect: [
-                                { documentId: second_level_structure }
+                                { documentId: first_level_structure }
                             ]
-                        }
-                    }),
-                    seller_name: offered_by,
-                    discourse_group_id: discourse_group_id ? parseInt(discourse_group_id) : null,
-                    discourse_category_id: discourse_category_id ? parseInt(discourse_category_id) : null,
-                    cover: cover ? parseInt(cover) : null,
-
+                        },
+                        // Second level structure relation (optional)
+                        ...(second_level_structure && {
+                            second_level_structure: {
+                                connect: [
+                                    { documentId: second_level_structure }
+                                ]
+                            }
+                        }),
+                        // ISCED Broad Field relation (optional - user can stop here)
+                        ...(isced_broad_field && {
+                            isced_broad_field: {
+                                connect: [
+                                    { documentId: isced_broad_field }
+                                ]
+                            }
+                        }),
+                        // ISCED Narrow Field relation (optional - user can stop here)
+                        ...(isced_narrow_field && {
+                            isced_narrow_field: {
+                                connect: [
+                                    { documentId: isced_narrow_field }
+                                ]
+                            }
+                        }),
+                        // ISCED Detailed Field relation (optional - most specific level)
+                        ...(isced_detailed_field && {
+                            isced_detailed_field: {
+                                connect: [
+                                    { documentId: isced_detailed_field }
+                                ]
+                            }
+                        }),
+                        seller_name: offered_by,
+                        discourse_group_id: discourse_group_id ? parseInt(discourse_group_id) : null,
+                        discourse_category_id: discourse_category_id ? parseInt(discourse_category_id) : null,
+                        cover: cover ? parseInt(cover) : null,
+                    }
+                });
+                
+                const topic_payload = {
+                    title: `"${name}" has been inserted in the NEOLink platform!`,
+                    raw: `${name} has been created and is now available on the NEOLink platform. Check it out!`,
+                    category: 101, 
                 }
-            });
-            const topic_payload = {
-                title: `"${name}" has been inserted in the NEOLink platform!`,
-                raw: `${name} has been created and is now available on the NEOLink platform. Check it out!`,
-                category: 101, 
-            }
-            await axios.post(`${process.env.DISCOURSE_URL}/posts.json`, topic_payload, {
-                headers: {
-                    'Api-Key': process.env.DISCOURSE_API_TOKEN,
-                    'Api-Username': 'system'
-                }
-            });
-            return ctx.response.created(entry);
+                await axios.post(`${process.env.DISCOURSE_URL}/posts.json`, topic_payload, {
+                    headers: {
+                        'Api-Key': process.env.DISCOURSE_API_TOKEN,
+                        'Api-Username': 'system'
+                    }
+                });
+                return ctx.response.created(entry);
             } catch (error){
                 console.log("Error creating Discourse group and category: " + error);
                 throw error;
@@ -477,7 +530,6 @@ module.exports = {
                 name: data.name,
                 description: data.description,
                 expiration: data.expiration || null,
-                isced_code: data.isced_code || null,
                 erc_area: data.erc_area || null,
                 start_date: data.start_date || null,
                 learning_outcomes: data.learning_outcomes || null,
@@ -489,39 +541,74 @@ module.exports = {
                 level_of_study: data.level_of_study || null,
             };
 
-            // Handle relations with connect syntax
+            // Handle university relation
             if (data.university) {
                 updatePayload.university = {
                     connect: [{ documentId: data.university }]
                 };
             }
 
+            // Handle first_level_structure relation
             if (data.first_level_structure) {
                 updatePayload.first_level_structure = {
                     connect: [{ documentId: data.first_level_structure }]
                 };
             }
 
+            // Handle second_level_structure relation
             if (data.second_level_structure) {
                 updatePayload.second_level_structure = {
                     connect: [{ documentId: data.second_level_structure }]
                 };
             } else {
-                updatePayload.second_level_structure =  null
+                updatePayload.second_level_structure = null;
             }
 
+            // Handle ISCED Broad Field relation (user can stop at this level)
+            if (data.isced_broad_field) {
+                updatePayload.isced_broad_field = {
+                    connect: [{ documentId: data.isced_broad_field }]
+                };
+            } else {
+                // Disconnect/clear if no value provided
+                updatePayload.isced_broad_field = null
+            }
+
+            // Handle ISCED Narrow Field relation (user can stop at this level)
+            if (data.isced_narrow_field) {
+                updatePayload.isced_narrow_field = {
+                    connect: [{ documentId: data.isced_narrow_field }]
+                };
+            } else {
+                // Disconnect/clear if no value provided
+                updatePayload.isced_narrow_field = null
+            }
+
+            // Handle ISCED Detailed Field relation (most specific level)
+            if (data.isced_detailed_field) {
+                updatePayload.isced_detailed_field = {
+                    connect: [{ documentId: data.isced_detailed_field }]
+                };
+            } else {
+                // Disconnect/clear if no value provided
+                updatePayload.isced_detailed_field = null
+            }
+
+            // Handle ERC Panel relation
             if (data.erc_panel) {
                 updatePayload.erc_panel = {
                     connect: [{ documentId: data.erc_panel }]
                 };
             }
 
+            // Handle ERC Keyword relation
             if (data.erc_keyword) {
                 updatePayload.erc_keyword = {
                     connect: [{ documentId: data.erc_keyword }]
                 };
             }
 
+            // Handle cover image
             if (cover) {
                 updatePayload.cover = parseInt(cover);
             }
