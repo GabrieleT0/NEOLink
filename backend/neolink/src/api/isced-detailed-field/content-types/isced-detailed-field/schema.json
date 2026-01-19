@@ -1,0 +1,26 @@
+{
+  "kind": "collectionType",
+  "collectionName": "isced_detailed_fields",
+  "info": {
+    "singularName": "isced-detailed-field",
+    "pluralName": "isced-detailed-fields",
+    "displayName": "isced_detailed_field"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "description": {
+      "type": "string"
+    },
+    "isced_narrow_field": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::isced-narrow-field.isced-narrow-field"
+    },
+    "code": {
+      "type": "string"
+    }
+  }
+}

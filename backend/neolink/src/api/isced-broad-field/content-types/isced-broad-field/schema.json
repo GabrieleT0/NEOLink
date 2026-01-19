@@ -1,0 +1,21 @@
+{
+  "kind": "collectionType",
+  "collectionName": "isced_broad_fields",
+  "info": {
+    "singularName": "isced-broad-field",
+    "pluralName": "isced-broad-fields",
+    "displayName": "isced_broad_field"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "description": {
+      "type": "string"
+    },
+    "code": {
+      "type": "string"
+    }
+  }
+}

@@ -565,6 +565,104 @@ export interface ApiInterestInterest extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiIscedBroadFieldIscedBroadField
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'isced_broad_fields';
+  info: {
+    displayName: 'isced_broad_field';
+    pluralName: 'isced-broad-fields';
+    singularName: 'isced-broad-field';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    code: Schema.Attribute.String;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    description: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::isced-broad-field.isced-broad-field'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiIscedDetailedFieldIscedDetailedField
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'isced_detailed_fields';
+  info: {
+    displayName: 'isced_detailed_field';
+    pluralName: 'isced-detailed-fields';
+    singularName: 'isced-detailed-field';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    code: Schema.Attribute.String;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    description: Schema.Attribute.String;
+    isced_narrow_field: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::isced-narrow-field.isced-narrow-field'
+    >;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::isced-detailed-field.isced-detailed-field'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiIscedNarrowFieldIscedNarrowField
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'isced_narrow_fields';
+  info: {
+    displayName: 'isced_narrow_field';
+    pluralName: 'isced-narrow-fields';
+    singularName: 'isced-narrow-field';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    code: Schema.Attribute.String;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    description: Schema.Attribute.String;
+    isced_broad_field: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::isced-broad-field.isced-broad-field'
+    >;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::isced-narrow-field.isced-narrow-field'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiItemCategoryItemCategory
   extends Struct.CollectionTypeSchema {
   collectionName: 'item_categories';
@@ -1293,6 +1391,9 @@ declare module '@strapi/strapi' {
       'api::erc-panel.erc-panel': ApiErcPanelErcPanel;
       'api::first-level-structure.first-level-structure': ApiFirstLevelStructureFirstLevelStructure;
       'api::interest.interest': ApiInterestInterest;
+      'api::isced-broad-field.isced-broad-field': ApiIscedBroadFieldIscedBroadField;
+      'api::isced-detailed-field.isced-detailed-field': ApiIscedDetailedFieldIscedDetailedField;
+      'api::isced-narrow-field.isced-narrow-field': ApiIscedNarrowFieldIscedNarrowField;
       'api::item-category.item-category': ApiItemCategoryItemCategory;
       'api::item.item': ApiItemItem;
       'api::second-level-structure.second-level-structure': ApiSecondLevelStructureSecondLevelStructure;
