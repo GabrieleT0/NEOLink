@@ -45,9 +45,10 @@ function ItemCard({ item }) {
     const getCoverImageUrl = () => {
         if (coverImage && coverImage.url) {
             // Use the medium format if available, otherwise use the original
-            if (coverImage.formats?.medium) {
+            if (coverImage.formats?.small ) {
+                console.log("Using medium format for cover image");
                 let img_url = base_url.replace('/api', '');
-                return `${img_url}${coverImage.formats.medium.url}`;
+                return `${img_url}${coverImage.formats.small.url}`;
             }
             return `${base_url}${coverImage.url}`;
         }

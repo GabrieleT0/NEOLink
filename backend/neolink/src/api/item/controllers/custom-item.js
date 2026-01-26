@@ -122,7 +122,7 @@ module.exports = {
                     }
                 );
                 let discourse_category_id = null;
-                if (category_name !== null || category_name !== '') {
+                if (category_name && category_name.trim() !== '') {
                     const category_name_sanitized = category_name.slice(0, 50);
                     const category_payload = {
                         name: `[NEOLink] ${category_name_sanitized}`,
@@ -221,7 +221,7 @@ module.exports = {
                         seller_name: offered_by,
                         discourse_group_id: discourse_group_id ? parseInt(discourse_group_id) : null,
                         discourse_category_id: discourse_category_id ? parseInt(discourse_category_id) : null,
-                        cover: cover ? parseInt(cover) : null,
+                        coverId: cover ? parseInt(cover) : null,
                     }
                 });
                 
@@ -552,6 +552,7 @@ module.exports = {
                 speakers: data.speakers || null,
                 pedagogical_objectives: data.pedagogical_objectives || null,
                 level_of_study: data.level_of_study || null,
+                coverId: cover || null,
             };
 
             // Handle university relation

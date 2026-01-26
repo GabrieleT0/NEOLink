@@ -398,16 +398,13 @@ function EditItem() {
 
             // If there's a new cover image, upload it separately
             let coverId = null
-            if (formData.cover) {
-                const coverFormData = new FormData();
-                coverFormData.append('files', formData.cover);
-                coverFormData.append('ref', 'api::item.item');
-                coverFormData.append('refId', documentId);
-                coverFormData.append('field', 'cover');
-                const uploadResponse = await axios.post(`${base_url}/upload`, coverFormData);
+            if (formData.cover && formData.cover instanceof File) {
+                const fileFormData = new FormData();
+                fileFormData.append('files', formData.cover);
+                
+                const uploadResponse = await axios.post(`${base_url}/upload`, fileFormData);
                 coverId = uploadResponse.data[0].id;
             }
-
             const response = await axios.post(
                 `${base_url}/custom-item/update-item/`,{
                     item_id: documentId,
