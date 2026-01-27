@@ -127,17 +127,23 @@ function ItemDetail() {
                 token: token,
             });
             
-            if (response.status === 200) {
-                setIsInterested(true);
-                setInterestMessage({
-                    type: 'success',
-                    text: response.data.message || 'You have been added to the Virtual Cafè discussion group!'
-                });
-                // Refresh item data to update interested_users
-                await fetchItemDetails();
-                // Clear message after 3 seconds
-                setTimeout(() => setInterestMessage(null), 3000);
-            }
+        if (response.status === 200) {
+            console.log(item);
+            setIsInterested(true);
+            console.log("Interest recorded successfully:", response.data);
+            const message = response.data.message || 'You have been added to the Virtual Cafè discussion group!';
+            const groupLink = response.data.link || response.data.groupLink;
+            
+            setInterestMessage({
+                type: 'success',
+                text: message,
+                link: groupLink 
+            });
+            
+            await fetchItemDetails();
+            
+            //setTimeout(() => setInterestMessage(null), 10000);
+        }
         } catch (err) {
             console.error("Error expressing interest:", err);
             
@@ -443,10 +449,27 @@ function ItemDetail() {
                         <span style={{ fontSize: '1.25rem' }}>
                             {interestMessage.type === 'success' ? '✓' : '⚠'}
                         </span>
-                        {interestMessage.text}
+                        <div style={{ flex: 1 }}>
+                            {interestMessage.text}
+                            {interestMessage.link && (
+                                <a 
+                                    href={interestMessage.link} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    style={{
+                                        display: 'inline-block',
+                                        marginLeft: '0.5rem',
+                                        color: '#0066cc',
+                                        textDecoration: 'underline',
+                                        fontWeight: '600'
+                                    }}
+                                >
+                                    Visit Group →
+                                </a>
+                            )}
+                        </div>
                     </div>
                 )}
-
                 {/* Back Button */}
                 <button
                     onClick={() => navigate('/items')}

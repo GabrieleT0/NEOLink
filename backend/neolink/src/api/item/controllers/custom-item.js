@@ -1,8 +1,6 @@
 const axios = require('axios');
 const seller = require('../../seller/controllers/seller');
 const crypto = require('crypto');
-const { connect } = require('http2');
-const { disconnect } = require('cluster');
 module.exports = {
    async create(ctx, next){
         try{
@@ -194,13 +192,14 @@ module.exports = {
                     }
                 );
                 let discourse_category_id = null;
+                let discourse_category_name = null;
                 if (category_name && category_name.trim() !== '') {
-                    const category_name_sanitized = category_name.slice(0, 50);
+                    const category_name_sanitized = category_name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9_-]/g, '').slice(0, 50);
                     const category_payload = {
                         name: `[NEOLink] ${category_name_sanitized}`,
                         color: (category_color || "0088CC").replace('#', ''),
                         text_color: "FFFFFF",
-                        slug:  category_name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9_-]/g, ''),
+                        slug:  category_name_sanitized,
                         parent_category_id: null,
                         allow_badges: true,
                         topic_featured_link_allowed: true,
@@ -218,12 +217,22 @@ module.exports = {
                         }
                     });
                     discourse_category_id = response_cat.data.category.id;
+                    discourse_category_name = response_cat.data.category.slug;
+                    console.log(response_cat.data)
                 }
-                
-                const topic_payload = {
-                    title: `"${name}" has been inserted in the NEOLink platform!`,
-                    raw: `${name} has been created and is now available on the NEOLink platform. Check it out!`,
-                    category: 101, 
+                let topic_payload
+                if (discourse_category_id){
+                    topic_payload = {
+                        title: `"${name}" has been inserted in the NEOLink platform!`,
+                        raw: `${name} has been created and is now available on the NEOLink platform.\nSee the conversation about the event at the following link: ${process.env.DISCOURSE_URL}/c/${discourse_category_name}!`,
+                        category: 101, 
+                    }
+                } else {
+                    topic_payload = {
+                        title: `"${name}" has been inserted in the NEOLink platform!`,
+                        raw: `${name} has been created and is now available on the NEOLink platform.\nShow interest to the event on NEOLink platform to join the conversation!`,
+                        category: 101, 
+                    }
                 }
                 await axios.post(`${process.env.DISCOURSE_URL}/posts.json`, topic_payload, {
                     headers: {
@@ -341,6 +350,7 @@ module.exports = {
                     }
             }
             try{
+                let group_name = "";
                 console.log("Adding user to Discourse group:", entry.discourse_group_id, "Username:", virtual_cafe_username);
                 const virtual_cafe_response = await axios.put(
                     `${process.env.DISCOURSE_URL}/groups/${entry.discourse_group_id}/members.json`,
@@ -352,8 +362,23 @@ module.exports = {
                         }
                     }
                 );
-                if (virtual_cafe_response.status === 200){
-                    // Add user to interested_users relation
+                const virtual_cafe_group_info = await axios.get(
+                    `${process.env.DISCOURSE_URL}/groups.json`,
+                     {
+                        headers: {
+                            'Api-Key': process.env.DISCOURSE_API_TOKEN,
+                            'Api-Username': 'system'
+                        }
+                    }
+                );
+                console.log(virtual_cafe_group_info.data)
+                if (virtual_cafe_response.status === 200 && virtual_cafe_group_info.status === 200){
+                    for (const group of virtual_cafe_group_info.data.groups){
+                        if (group.id === entry.discourse_group_id){
+                            console.log("User added to Discourse group:", group.name, "Link:", `${process.env.DISCOURSE_URL}/g/${group.name}`);
+                            group_name = group.name;
+                        }
+                    }
                     try {
                         await strapi.documents("api::item.item").update({
                             documentId: item_id,
@@ -367,13 +392,12 @@ module.exports = {
                         await strapi.documents("api::item.item").publish({
                             documentId: item_id
                         });
-                        
                         console.log('User added to interested_users relation');
                     } catch (error) {
                         console.log("Error adding user to interested_users relation: " + error);
                         return ctx.internalServerError('Error adding user to interested_users relation');
                     }
-                    return ctx.send({message: 'User added to the group successfully'});
+                    return ctx.send({message: 'You have been added to the Virtual Cafè discussion group!', link: `${process.env.DISCOURSE_URL}/g/${group_name}`});
                 }
             } catch (error){
                 console.log("Error adding user to the group: " + error);
