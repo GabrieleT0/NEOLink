@@ -77,15 +77,15 @@ function CreateItemFormStep2({ token, initialData, onBack, onSubmit }) {
     // Predefined color options
     const colorOptions = [
         { value: '#7c6fd6', label: 'Purple' },
-        { value: '#28a745', label: 'Green' },
-        { value: '#007bff', label: 'Blue' },
-        { value: '#dc3545', label: 'Red' },
-        { value: '#ffc107', label: 'Yellow' },
-        { value: '#17a2b8', label: 'Cyan' },
-        { value: '#fd7e14', label: 'Orange' },
-        { value: '#6f42c1', label: 'Indigo' },
-        { value: '#e83e8c', label: 'Pink' },
-        { value: '#20c997', label: 'Teal' },
+        { value: '#9EB83B', label: 'Green' },
+        { value: '#0088CC', label: 'Blue' },
+        { value: '#BF1E2E', label: 'Red' },
+        { value: '#FFF000', label: 'Yellow' },
+        { value: '#00FFFF', label: 'Cyan' },
+        { value: '#F1592A', label: 'Orange' },
+        { value: '#652D90', label: 'Indigo' },
+        { value: '#FFB6C1', label: 'Pink' },
+        { value: '#3AB54A', label: 'Teal' },
     ];
 
     return (
