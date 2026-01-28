@@ -3,6 +3,10 @@ const seller = require('../../seller/controllers/seller');
 const crypto = require('crypto');
 module.exports = {
    async create(ctx, next){
+        let createdEntry = null;
+        let createdGroupId = null;
+        let createdCategoryId = null;
+        
         try{
             const { 
                 item_status, 
@@ -32,97 +36,28 @@ module.exports = {
             } = ctx.request.body;
             
             const {group_name, group_display_name, group_description, category_name, category_color} = ctx.request.body;
-            const email = ctx.request.body.data.email
-            const user_id = ctx.request.body.data.user_id
+            const email = ctx.request.body.data.email;
+            const user_id = ctx.request.body.data.user_id;
             
-            // First, create the entry in Strapi DB
-            let entry = await strapi.entityService.create("api::item.item", {
-                data:{
-                    seller: user_id.toString(),
-                    item_status,
-                    name,
-                    description,
-                    item_category,
-                    expiration,
-                    ...(erc_area && erc_area.trim() !== '' && { erc_area }),
-                    ...(erc_panel && {
-                        erc_panel: {
-                            connect: [
-                                { documentId: erc_panel }
-                            ]
-                        }
-                    }),
-                    ...(erc_keyword && {
-                        erc_keyword: {
-                            connect: [
-                                { documentId: erc_keyword }
-                            ]
-                        }
-                    }),
-                    start_date,
-                    learning_outcomes,
-                    multimedial_material_provided: multimediarial_material_provided,
-                    end_date,
-                    languages,
-                    speakers,
-                    pedagogical_objectives,
-                    level_of_study,
-                    university,
-                    first_level_structure: {
-                        connect: [
-                            { documentId: first_level_structure }
-                        ]
-                    },
-                    ...(second_level_structure && {
-                        second_level_structure: {
-                            connect: [
-                                { documentId: second_level_structure }
-                            ]
-                        }
-                    }),
-                    ...(isced_broad_field && {
-                        isced_broad_field: {
-                            connect: [
-                                { documentId: isced_broad_field }
-                            ]
-                        }
-                    }),
-                    ...(isced_narrow_field && {
-                        isced_narrow_field: {
-                            connect: [
-                                { documentId: isced_narrow_field }
-                            ]
-                        }
-                    }),
-                    ...(isced_detailed_field && {
-                        isced_detailed_field: {
-                            connect: [
-                                { documentId: isced_detailed_field }
-                            ]
-                        }
-                    }),
-                    seller_name: offered_by,
-                    coverId: cover ? parseInt(cover) : null,
-                }
-            });
-            
-            try{
+            try {
+                // Step 1: Handle Discourse user
                 let virtual_cafe_username = "";
                 const response_profile = await axios.get(`${process.env.DISCOURSE_URL}/admin/users/list/active.json`, {
-                params: {
-                    email: email,
-                    show_emails: true
-                },
-                headers: {
-                    'Api-Key': process.env.DISCOURSE_API_TOKEN,
-                    'Api-Username': 'system'
-                }
+                    params: {
+                        email: email,
+                        show_emails: true
+                    },
+                    headers: {
+                        'Api-Key': process.env.DISCOURSE_API_TOKEN,
+                        'Api-Username': 'system'
+                    }
                 });
+                
                 const virtual_cafe_profile = response_profile.data;
                 if (virtual_cafe_profile && virtual_cafe_profile.length > 0){
                     virtual_cafe_username = virtual_cafe_profile[0].username || "";
                 } else {
-                    // User doesn't exist, create user via Discourse Connect                    
+                    // User doesn't exist, create user via Discourse Connect
                     const username = email.split('@')[0];
                     
                     const ssoPayload = new URLSearchParams({
@@ -139,30 +74,28 @@ module.exports = {
                         .update(base64Payload)
                         .digest('hex');
 
-                    try {
-                        const syncResponse = await axios.post(
-                            `${process.env.DISCOURSE_URL}/admin/users/sync_sso`,
-                            {
-                                sso: base64Payload,
-                                sig: signature
-                            },
-                            {
-                                headers: {
-                                    'Api-Key': process.env.DISCOURSE_API_TOKEN,
-                                    'Api-Username': 'system',
-                                    'Content-Type': 'application/json'
-                                }
+                    const syncResponse = await axios.post(
+                        `${process.env.DISCOURSE_URL}/admin/users/sync_sso`,
+                        {
+                            sso: base64Payload,
+                            sig: signature
+                        },
+                        {
+                            headers: {
+                                'Api-Key': process.env.DISCOURSE_API_TOKEN,
+                                'Api-Username': 'system',
+                                'Content-Type': 'application/json'
                             }
-                        );
-                        console.log('User synced successfully:', syncResponse.data);
-                        virtual_cafe_username = username;
-                }  catch (syncError) {
-                        console.error('Error syncing user via Discourse Connect:', syncError.response?.data || syncError.message);
-                    }
+                        }
+                    );
+                    console.log('User synced successfully:', syncResponse.data);
+                    virtual_cafe_username = username;
                 }
-                let group_name_sanitazed = group_name.toLowerCase().trim().replace(/\s+/g, '_').replace(/[^a-z0-9_-]/g, '').slice(0, 20);
+                
+                // Step 2: Create Discourse group
+                let group_name_sanitized = group_name.toLowerCase().trim().replace(/\s+/g, '_').replace(/[^a-z0-9_-]/g, '').slice(0, 20);
                 const group_payload = {
-                    name: group_name_sanitazed,
+                    name: group_name_sanitized,
                     full_name: `[NEOLink] ${group_display_name || group_name}`,
                     visibility_level: 0,
                     bio_raw: group_description || "",
@@ -173,16 +106,19 @@ module.exports = {
                     skip_validations: true,
                     messageable_level: 3
                 };
-                const response = await axios.post(`${process.env.DISCOURSE_URL}/admin/groups.json`, group_payload, {
+                
+                const groupResponse = await axios.post(`${process.env.DISCOURSE_URL}/admin/groups.json`, group_payload, {
                     headers: {
                         'Api-Key': process.env.DISCOURSE_API_TOKEN,
                         'Api-Username': 'system'
                     }
                 });
-                console.log("Group creation response:", response)
-                const discourse_group_id = response.data.basic_group.id;
+                console.log("Group creation response:", groupResponse);
+                createdGroupId = groupResponse.data.basic_group.id;
+                
+                // Step 3: Add user to group
                 await axios.put(
-                    `${process.env.DISCOURSE_URL}/groups/${discourse_group_id}/members.json`,
+                    `${process.env.DISCOURSE_URL}/groups/${createdGroupId}/members.json`,
                     { usernames: virtual_cafe_username },
                     {
                         headers: {
@@ -191,7 +127,8 @@ module.exports = {
                         }
                     }
                 );
-                let discourse_category_id = null;
+                
+                // Step 4: Create Discourse category (if requested)
                 let discourse_category_name = null;
                 if (category_name && category_name.trim() !== '') {
                     const category_name_sanitized = category_name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9_-]/g, '').slice(0, 50);
@@ -199,41 +136,45 @@ module.exports = {
                         name: `[NEOLink] ${category_name_sanitized}`,
                         color: (category_color || "0088CC").replace('#', ''),
                         text_color: "FFFFFF",
-                        slug:  category_name_sanitized,
+                        slug: category_name_sanitized,
                         parent_category_id: null,
                         allow_badges: true,
                         topic_featured_link_allowed: true,
                         permissions: {
-                            [group_name_sanitazed]: 1,
+                            [group_name_sanitized]: 1,
                             'everyone': 3,
                             'staff': 1,
                             'admins': 1,
                         }
-                    }
-                    const response_cat = await axios.post(`${process.env.DISCOURSE_URL}/categories.json`, category_payload, {
+                    };
+                    
+                    const categoryResponse = await axios.post(`${process.env.DISCOURSE_URL}/categories.json`, category_payload, {
                         headers: {
                             'Api-Key': process.env.DISCOURSE_API_TOKEN,
                             'Api-Username': 'system'
                         }
                     });
-                    discourse_category_id = response_cat.data.category.id;
-                    discourse_category_name = response_cat.data.category.slug;
-                    console.log(response_cat.data)
+                    createdCategoryId = categoryResponse.data.category.id;
+                    discourse_category_name = categoryResponse.data.category.slug;
+                    console.log(categoryResponse.data);
                 }
-                let topic_payload
-                if (discourse_category_id){
+                
+                // Step 5: Create announcement topic
+                let topic_payload;
+                if (createdCategoryId){
                     topic_payload = {
                         title: `"${name}" has been inserted in the NEOLink platform!`,
                         raw: `${name} has been created and is now available on the NEOLink platform.\nSee the conversation about the event at the following link: ${process.env.DISCOURSE_URL}/c/${discourse_category_name}!`,
                         category: 101, 
-                    }
+                    };
                 } else {
                     topic_payload = {
                         title: `"${name}" has been inserted in the NEOLink platform!`,
                         raw: `${name} has been created and is now available on the NEOLink platform.\nShow interest to the event on NEOLink platform to join the conversation!`,
                         category: 101, 
-                    }
+                    };
                 }
+                
                 await axios.post(`${process.env.DISCOURSE_URL}/posts.json`, topic_payload, {
                     headers: {
                         'Api-Key': process.env.DISCOURSE_API_TOKEN,
@@ -241,23 +182,126 @@ module.exports = {
                     }
                 });
                 
-                entry = await strapi.entityService.update("api::item.item", entry.id, {
-                    data: {
-                        discourse_group_id: discourse_group_id ? parseInt(discourse_group_id) : null,
-                        discourse_category_id: discourse_category_id ? parseInt(discourse_category_id) : null,
+                // Step 6: Create Strapi entry (only after Discourse operations succeed)
+                createdEntry = await strapi.entityService.create("api::item.item", {
+                    data:{
+                        seller: user_id.toString(),
+                        item_status,
+                        name,
+                        description,
+                        item_category,
+                        expiration,
+                        ...(erc_area && erc_area.trim() !== '' && { erc_area }),
+                        ...(erc_panel && {
+                            erc_panel: {
+                                connect: [
+                                    { documentId: erc_panel }
+                                ]
+                            }
+                        }),
+                        ...(erc_keyword && {
+                            erc_keyword: {
+                                connect: [
+                                    { documentId: erc_keyword }
+                                ]
+                            }
+                        }),
+                        start_date,
+                        learning_outcomes,
+                        multimedial_material_provided: multimediarial_material_provided,
+                        end_date,
+                        languages,
+                        speakers,
+                        pedagogical_objectives,
+                        level_of_study,
+                        university,
+                        first_level_structure: {
+                            connect: [
+                                { documentId: first_level_structure }
+                            ]
+                        },
+                        ...(second_level_structure && {
+                            second_level_structure: {
+                                connect: [
+                                    { documentId: second_level_structure }
+                                ]
+                            }
+                        }),
+                        ...(isced_broad_field && {
+                            isced_broad_field: {
+                                connect: [
+                                    { documentId: isced_broad_field }
+                                ]
+                            }
+                        }),
+                        ...(isced_narrow_field && {
+                            isced_narrow_field: {
+                                connect: [
+                                    { documentId: isced_narrow_field }
+                                ]
+                            }
+                        }),
+                        ...(isced_detailed_field && {
+                            isced_detailed_field: {
+                                connect: [
+                                    { documentId: isced_detailed_field }
+                                ]
+                            }
+                        }),
+                        seller_name: offered_by,
+                        coverId: cover ? parseInt(cover) : null,
+                        discourse_group_id: createdGroupId ? parseInt(createdGroupId) : null,
+                        discourse_category_id: createdCategoryId ? parseInt(createdCategoryId) : null,
                     }
                 });
                 
-            } catch (discourseError){
-                console.log("Error creating Discourse group and category: " + discourseError);
-                console.log("Strapi entry created successfully, but Discourse integration failed");
-                // Entry was created in Strapi, so we still return it even if Discourse failed
+                return ctx.response.created(createdEntry);
+                
+            } catch (discourseError) {
+                console.error("Error in Discourse operations:", discourseError.response?.data || discourseError.message);
+                
+                // Rollback: Delete created resources in reverse order
+                try {
+                    // Delete Strapi entry if created
+                    if (createdEntry) {
+                        console.log("Rolling back: Deleting Strapi entry", createdEntry.id);
+                        await strapi.entityService.delete("api::item.item", createdEntry.id);
+                    }
+                    
+                    // Delete Discourse category if created
+                    if (createdCategoryId) {
+                        console.log("Rolling back: Deleting Discourse category", createdCategoryId);
+                        await axios.delete(`${process.env.DISCOURSE_URL}/categories/${createdCategoryId}.json`, {
+                            headers: {
+                                'Api-Key': process.env.DISCOURSE_API_TOKEN,
+                                'Api-Username': 'system'
+                            }
+                        });
+                    }
+                    
+                    // Delete Discourse group if created
+                    if (createdGroupId) {
+                        console.log("Rolling back: Deleting Discourse group", createdGroupId);
+                        await axios.delete(`${process.env.DISCOURSE_URL}/admin/groups/${createdGroupId}.json`, {
+                            headers: {
+                                'Api-Key': process.env.DISCOURSE_API_TOKEN,
+                                'Api-Username': 'system'
+                            }
+                        });
+                    }
+                    
+                    console.log("Rollback completed successfully");
+                } catch (rollbackError) {
+                    console.error("Error during rollback:", rollbackError.response?.data || rollbackError.message);
+                    // Log the rollback error but don't throw - we want to return the original error
+                }
+                
+                // Return error to client
+                return ctx.badRequest(`Failed to create item: ${discourseError.response?.data?.errors?.[0] || discourseError.message}`);
             }
             
-            return ctx.response.created(entry);
-            
         } catch (error){
-            console.log(error);
+            console.error("Unexpected error:", error);
             return ctx.internalServerError(error.message);
         }
     },
