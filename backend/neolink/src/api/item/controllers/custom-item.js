@@ -589,44 +589,74 @@ ${process.env.FRONT_END_URL}items/${createdEntry.documentId || 'N/A'}`,
     },
     async removeItem(ctx, next){
         const { item_id } = ctx.request.body;
-        try{
+        try {
             const entry = await strapi.db.query("api::item.item").findOne({
                 select: ['discourse_group_id', 'discourse_category_id'],
                 where: { documentId: item_id },
             });
-            if (entry){
-                if (entry.discourse_group_id){
-                    try{
+            
+            if (entry) {
+                // Delete Discourse group
+                if (entry.discourse_group_id) {
+                    try {
                         await axios.delete(`${process.env.DISCOURSE_URL}/admin/groups/${entry.discourse_group_id}.json`, {
                             headers: {
                                 'Api-Key': process.env.DISCOURSE_API_TOKEN,
                                 'Api-Username': 'system'
                             }
                         });
-                    } catch (error){
+                    } catch (error) {
                         console.log("Error deleting Discourse group: " + error);
                     }
                 }
-                if (entry.discourse_category_id){
-                    try{
+                
+                // Delete Discourse category (after deleting all topics)
+                if (entry.discourse_category_id) {
+                    try {
+                        // First, get all topics in the category
+                        const topicsResponse = await axios.get(`${process.env.DISCOURSE_URL}/c/${entry.discourse_category_id}.json`, {
+                            headers: {
+                                'Api-Key': process.env.DISCOURSE_API_TOKEN,
+                                'Api-Username': 'system'
+                            }
+                        });
+                        
+                        // Delete each topic
+                        const topics = topicsResponse.data.topic_list.topics;
+                        for (const topic of topics) {
+                            try {
+                                await axios.delete(`${process.env.DISCOURSE_URL}/t/${topic.id}.json`, {
+                                    headers: {
+                                        'Api-Key': process.env.DISCOURSE_API_TOKEN,
+                                        'Api-Username': 'system'
+                                    }
+                                });
+                            } catch (topicError) {
+                                console.log(`Error deleting topic ${topic.id}: ${topicError}`);
+                            }
+                        }
+                        
+                        // Now delete the empty category
                         await axios.delete(`${process.env.DISCOURSE_URL}/categories/${entry.discourse_category_id}.json`, {
                             headers: {
                                 'Api-Key': process.env.DISCOURSE_API_TOKEN,
                                 'Api-Username': 'system'
                             }
                         });
-                    } catch (error){
+                    } catch (error) {
                         console.log("Error deleting Discourse category: " + error);
                     }
                 }
+                // Delete the Strapi item
                 await strapi.documents("api::item.item").delete({
                     documentId: item_id
                 });
-                return ctx.send({message: 'Item and associated Discourse group/category deleted successfully'});
+                
+                return ctx.send({ message: 'Item and associated Discourse group/category deleted successfully' });
             } else {
                 return ctx.notFound('Item not found');
             }
-        } catch (error){
+        } catch (error) {
             console.log(error);
             return ctx.internalServerError(error.message);
         }
