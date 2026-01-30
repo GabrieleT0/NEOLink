@@ -1,6 +1,7 @@
 const axios = require('axios');
 const seller = require('../../seller/controllers/seller');
 const crypto = require('crypto');
+const { pop } = require('../../../../config/middlewares');
 module.exports = {
    async create(ctx, next){
         let createdEntry = null;
@@ -230,17 +231,31 @@ module.exports = {
                         discourse_category_id: createdCategoryId ? parseInt(createdCategoryId) : null,
                         category_name: group_name_sanitized,
                         group_name: group_name_sanitized,
-                    }
+                    },
+                    populate: ['item_category']
                 });
 
                 if (createdEntry){
+                    console.log("Created Strapi entry:", createdEntry);
                     let topic_payload;
                     let update_group_payload;
                     
                     if (createdCategoryId){
                         topic_payload = {
-                            title: `"${name}" has been inserted in the NEOLink platform!`,
-                            raw: `${name} has been created and is now available on the NEOLink platform.\nSee the conversation about the event at the following link: ${process.env.FRONT_END_URL}/c/${discourse_category_name}!`,
+                            title: `"${name}" has been successfully published on NEOLink`,
+                            raw: `We are pleased to announce that **${name}** has been successfully created and is now available on the **NEOLink platform**!
+
+**Description**  
+${description}
+
+**Event Type**  
+${createdEntry.item_category?.name || 'N/A'}
+
+**Offered by**  
+${offered_by}
+
+Show your interest to the event on NEOLink at the following link to join the conversation:  
+${process.env.FRONT_END_URL}items/${createdEntry.documentId || 'N/A'}`,
                             category: 101, 
                         };
                     
