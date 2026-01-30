@@ -247,7 +247,7 @@ module.exports = {
                         coverId: cover ? parseInt(cover) : null,
                         discourse_group_id: createdGroupId ? parseInt(createdGroupId) : null,
                         discourse_category_id: createdCategoryId ? parseInt(createdCategoryId) : null,
-                        category_name: group_name_sanitized,
+                        category_name: discourse_category_name,
                         group_name: group_name_sanitized,
                     },
                     populate: ['item_category']
