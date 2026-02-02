@@ -785,7 +785,13 @@ ${process.env.FRONT_END_URL}items/${createdEntry.documentId || 'N/A'}`,
                 
                 if (discourse_group_id){
                     try{
-                        const group_name_sanitazed = data.name.toLowerCase().trim().replace(/\s+/g, '_').replace(/[^a-z0-9_-]/g, '').slice(0, 20);
+                        const group_name_sanitazed = data.name
+                            .toLowerCase()
+                            .trim()
+                            .replace(/\s+/g, '_')
+                            .replace(/[^a-z0-9_-]/g, '')
+                            .replace(/[-._]{2,}/g, '_')  // Replace sequences of 2+ special chars with single underscore
+                            .slice(0, 20);
                         await axios.put(`${process.env.DISCOURSE_URL}/groups/${discourse_group_id}.json`, {
                             name: group_name_sanitazed,
                             full_name: `[NEOLink] ${data.name}`,
