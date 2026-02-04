@@ -109,7 +109,6 @@ module.exports = {
                     default_notification_level: 3,
                     primary_group: false,
                     skip_validations: true,
-                    //messageable_level: 3
                 };
                 
                 const groupResponse = await axios.post(`${process.env.DISCOURSE_URL}/admin/groups.json`, group_payload, {
@@ -128,7 +127,7 @@ module.exports = {
                         .trim()
                         .replace(/\s+/g, '_')
                         .replace(/[^a-z0-9_-]/g, '')
-                        .replace(/[-._]{2,}/g, '_')  // Replace sequences of 2+ special chars with single underscore
+                        .replace(/[-._]{2,}/g, '_')
                         .slice(0, 40);
                     const category_payload = {
                         name: `[NEOLink] ${group_display_name.slice(0, 40)}`,
@@ -140,7 +139,6 @@ module.exports = {
                         topic_featured_link_allowed: true,
                         permissions: {
                             [group_name_sanitized]: 1,
-                            //'everyone': 3,
                             'staff': 1,
                             'admins': 1,
                         }
@@ -265,11 +263,38 @@ module.exports = {
 
                 if (createdEntry){
                     console.log("Created Strapi entry:", createdEntry);
-                    let topic_payload;
 
-                    
                     if (createdCategoryId){
-                        topic_payload = {
+                        const concatenated_name = group_display_name + ' ' + new Date().toLocaleString();
+
+                        // Step 7: Create the welcome topic FIRST to get its ID
+                        const welcome_topic_payload = {
+                            title: `Welcome (write here first :slightly_smiling_face:) ${concatenated_name}!`,
+                            raw: `**${offered_by}** have just created the event **${name}** in the NEOLink platform!
+
+Feel free to write here to welcome new members who showed interest in the event and joined the group!`,
+                            category: createdCategoryId,
+                            auto_track: true,
+                        };
+
+                        const welcome_topic_response = await axios.post(`${process.env.DISCOURSE_URL}/posts.json`, welcome_topic_payload, {
+                            headers: {
+                                'Api-Key': process.env.DISCOURSE_API_TOKEN,
+                                'Api-Username': 'system'
+                            }
+                        });
+
+                        const welcomeTopicId = welcome_topic_response.data.topic_id;
+
+                        // Update Strapi entry with the welcome topic ID
+                        await strapi.entityService.update("api::item.item", createdEntry.id, {
+                            data: {
+                                first_topic_id: welcomeTopicId
+                            }
+                        });
+
+                        // Step 8: Create announcement topic in category 101 with correct welcome topic URL
+                        const announcement_payload = {
                             title: `"${name}" has been successfully published on NEOLink`,
                             raw: `We are pleased to announce that **${name}** has been successfully created and is now available on the **NEOLink platform**!
 
@@ -286,27 +311,28 @@ Show your interest to the event on NEOLink at the following link to join the con
 ${process.env.FRONTEND_URL}items/${createdEntry.documentId || 'N/A'}`,
                             category: 101, 
                         };
-                        await axios.post(`${process.env.DISCOURSE_URL}/posts.json`, topic_payload, {
+
+                        await axios.post(`${process.env.DISCOURSE_URL}/posts.json`, announcement_payload, {
                             headers: {
                                 'Api-Key': process.env.DISCOURSE_API_TOKEN,
                                 'Api-Username': 'system'
                             }
                         });
 
-                    const topicsResponse = await axios.get(`${process.env.DISCOURSE_URL}/c/${createdCategoryId}.json`, {
-                        headers: {
-                            'Api-Key': process.env.DISCOURSE_API_TOKEN,
-                            'Api-Username': 'system'
-                        }
-                    });
+                        // Step 9: Update the auto-generated "About" topic in the new category
+                        const topicsResponse = await axios.get(`${process.env.DISCOURSE_URL}/c/${createdCategoryId}.json`, {
+                            headers: {
+                                'Api-Key': process.env.DISCOURSE_API_TOKEN,
+                                'Api-Username': 'system'
+                            }
+                        });
 
-                    const concatenated_name = group_display_name + ' ' + new Date().toLocaleString();
+                        const topics = topicsResponse.data.topic_list.topics;
+                        // Find the "About" topic (the one that's not our welcome topic)
+                        let about_topic = topics.find(t => t.id !== welcomeTopicId);
 
-                    const topics = topicsResponse.data.topic_list.topics;
-                    let first_topic = topics.length > 0 ? topics[0] : null;
-
-                    if (first_topic){
-                        const postContent = `We are pleased to announce that **${name}** has been successfully created and is now available on the **NEOLink platform**!
+                        if (about_topic){
+                            const postContent = `We are pleased to announce that **${name}** has been successfully created and is now available on the **NEOLink platform**!
 
 **Description**  
 ${description}
@@ -320,64 +346,41 @@ ${offered_by}
 See all the details of the event on NEOLink at the following link:  
 ${process.env.FRONTEND_URL}items/${createdEntry.documentId || 'N/A'}
 
-Join the conversation at the following link: ${process.env.DISCOURSE_URL}/t/welcome-write-here-first-${transformString(concatenated_name)}`;
+Join the conversation at the following link: ${process.env.DISCOURSE_URL}/t/${welcomeTopicId}`;
 
-                        // Update topic title
-                        await axios.put(`${process.env.DISCOURSE_URL}/t/-/${first_topic.id}.json`, {
-                            title: `Info about the event "${concatenated_name}"`,
-                            category: createdCategoryId,
-                        }, {
-                            headers: {
-                                'Api-Key': process.env.DISCOURSE_API_TOKEN,
-                                'Api-Username': 'system'
-                            }
-                        });
+                            // Update topic title
+                            await axios.put(`${process.env.DISCOURSE_URL}/t/-/${about_topic.id}.json`, {
+                                title: `Info about the event "${concatenated_name}"`,
+                                category: createdCategoryId,
+                            }, {
+                                headers: {
+                                    'Api-Key': process.env.DISCOURSE_API_TOKEN,
+                                    'Api-Username': 'system'
+                                }
+                            });
 
-                        // Update the first post content
-                        // Get the topic details to find the first post ID
-                        const topicDetails = await axios.get(`${process.env.DISCOURSE_URL}/t/${first_topic.id}.json`, {
-                            headers: {
-                                'Api-Key': process.env.DISCOURSE_API_TOKEN,
-                                'Api-Username': 'system'
-                            }
-                        });
-                        
-                        const firstPostId = topicDetails.data.post_stream.posts[0].id;
-                        
-                        await axios.put(`${process.env.DISCOURSE_URL}/posts/${firstPostId}.json`, {
-                            post: {
-                                raw: postContent
-                            }
-                        }, {
-                            headers: {
-                                'Api-Key': process.env.DISCOURSE_API_TOKEN,
-                                'Api-Username': 'system'
-                            }
-                        });
-                    }
-
-
-                        topic_payload = {
-                            title: `Welcome (write here first :slightly_smiling_face:) ${concatenated_name}!`,
-                            raw: `**${offered_by}** have just created the event **${name}** in the NEOLink platform!
-
-Feel free to write here to welcome new members who showed interest in the event and joined the group!`,
-                            category: createdCategoryId,
-                            auto_track: true,
+                            // Get the topic details to find the first post ID
+                            const topicDetails = await axios.get(`${process.env.DISCOURSE_URL}/t/${about_topic.id}.json`, {
+                                headers: {
+                                    'Api-Key': process.env.DISCOURSE_API_TOKEN,
+                                    'Api-Username': 'system'
+                                }
+                            });
+                            
+                            const firstPostId = topicDetails.data.post_stream.posts[0].id;
+                            
+                            // Update the first post content with correct welcome topic URL
+                            await axios.put(`${process.env.DISCOURSE_URL}/posts/${firstPostId}.json`, {
+                                post: {
+                                    raw: postContent
+                                }
+                            }, {
+                                headers: {
+                                    'Api-Key': process.env.DISCOURSE_API_TOKEN,
+                                    'Api-Username': 'system'
+                                }
+                            });
                         }
-                        const topic_response = await axios.post(`${process.env.DISCOURSE_URL}/posts.json`, topic_payload, {
-                            headers: {
-                                'Api-Key': process.env.DISCOURSE_API_TOKEN,
-                                'Api-Username': 'system'
-                            }
-                        });
-
-                        // Update Strapi entry with the topic ID
-                        await strapi.entityService.update("api::item.item", createdEntry.id, {
-                            data: {
-                                first_topic_id: topic_response.data.topic_id
-                            }
-                        });
                     }
                 }
                 return ctx.response.created(createdEntry);
@@ -387,7 +390,6 @@ Feel free to write here to welcome new members who showed interest in the event 
             }
         } catch (error) {
             console.error("Error in create function:", error);
-            // Add your error handling here
             throw error;
         }
     },
