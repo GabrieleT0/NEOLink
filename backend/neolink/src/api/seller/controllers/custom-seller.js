@@ -55,7 +55,14 @@ module.exports = {
                 if (virtual_cafe_profile && virtual_cafe_profile.length > 0){
                     full_name = virtual_cafe_profile[0].name || "";
                     virtual_cafe_id = virtual_cafe_profile[0].id || false;
-                } 
+                    try {
+                        full_name = new TextDecoder('utf-8').decode(
+                            new Uint8Array([...full_name].map(c => c.charCodeAt(0)))
+                        );
+                    } catch (error) {
+                        console.log("Error decoding full_name for email: " + email);
+                    }
+                }
                 } catch (error){
                     console.log("Error fetching Discourse profile for email: " + email);
                 }
