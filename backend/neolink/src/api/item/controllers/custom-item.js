@@ -270,9 +270,9 @@ module.exports = {
                         // Step 7: Create the welcome topic FIRST to get its ID
                         const welcome_topic_payload = {
                             title: `Welcome (write here first :slightly_smiling_face:) ${concatenated_name}!`,
-                            raw: `**${offered_by}** have just created the event **${name}** in the NEOLink platform!
+                            raw: `**${offered_by}** has just created the event **${name}** in the NEOLink platform!
 
-Feel free to write here to welcome new members who showed interest in the event and joined the group!`,
+Feel free to write here to welcome new members who show interest in the event and join the group!`,
                             category: createdCategoryId,
                             auto_track: true,
                         };
