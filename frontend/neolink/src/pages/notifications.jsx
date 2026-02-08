@@ -194,8 +194,8 @@ function NotificationsPage() {
     const renderNotificationCard = (notification) => {
         const subscriptionName = notification.subscription?.name || 'Custom alert';
         const itemName = notification.item?.name || notification.title || 'Item';
-        const itemDocumentId = notification.item?.documentId;
         const isUnread = !notification.is_read;
+        const isItemDeleted = !notification.item;
 
         return (
             <div
@@ -207,7 +207,8 @@ function NotificationsPage() {
                     border: `1px solid ${isUnread ? '#d4d0f0' : '#e8eef3'}`,
                     boxShadow: isUnread ? '0 4px 20px rgba(124, 111, 214, 0.12)' : '0 4px 20px rgba(0, 0, 0, 0.06)',
                     transition: 'all 0.2s ease',
-                    textAlign: 'left'
+                    textAlign: 'left',
+                    opacity: isItemDeleted ? 0.7 : 1
                 }}
             >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
@@ -234,11 +235,12 @@ function NotificationsPage() {
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem', justifyContent: 'flex-start' }}>
                     <span style={{
-                        backgroundColor: '#f8f9fa',
+                        backgroundColor: isItemDeleted ? '#fff5f5' : '#f8f9fa',
                         borderRadius: '999px',
                         padding: '0.3rem 0.85rem',
                         fontSize: '0.85rem',
-                        color: '#495057'
+                        color: isItemDeleted ? '#c92a2a' : '#495057',
+                        fontWeight: isItemDeleted ? 600 : 400
                     }}>
                         Status: {notification.item?.item_status || 'deleted'}
                     </span>
@@ -246,21 +248,24 @@ function NotificationsPage() {
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'flex-start' }}>
                     <button
-                        onClick={() => handleViewItem(notification)}
+                        onClick={() => !isItemDeleted && handleViewItem(notification)}
+                        disabled={isItemDeleted}
                         style={{
                             padding: '0.6rem 1.25rem',
                             borderRadius: '10px',
                             border: 'none',
-                            background: 'linear-gradient(135deg, #7c6fd6 0%, #8b7ad6 100%)',
-                            color: 'white',
+                            background: isItemDeleted ? '#e9ecef' : 'linear-gradient(135deg, #7c6fd6 0%, #8b7ad6 100%)',
+                            color: isItemDeleted ? '#8899a8' : 'white',
                             fontWeight: 600,
                             fontSize: '0.85rem',
-                            cursor: 'pointer',
+                            cursor: isItemDeleted ? 'not-allowed' : 'pointer',
                             transition: 'all 0.2s ease',
-                            boxShadow: '0 2px 8px rgba(124, 111, 214, 0.25)'
+                            boxShadow: isItemDeleted ? 'none' : '0 2px 8px rgba(124, 111, 214, 0.25)',
+                            opacity: isItemDeleted ? 0.6 : 1
                         }}
+                        title={isItemDeleted ? 'This item has been deleted from the platform' : 'View item'}
                     >
-                        View
+                        {isItemDeleted ? 'Event deleted' : 'View'}
                     </button>
                     {isUnread && (
                         <button
