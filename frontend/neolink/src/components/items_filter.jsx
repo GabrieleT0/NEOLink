@@ -3,7 +3,7 @@ import axios from "axios";
 import { base_url } from "../api";
 import { shouldShowField } from "../category_field_config";
 
-function ItemsFilter({ filters, onFilterChange, onClearFilters }) {
+function ItemsFilter({ filters, onFilterChange, onClearFilters, onSubscribeRequest = () => {}, canSubscribe = true, subscriptionHint = '' }) {
     const [categories, setCategories] = useState([]);
     const [universities, setUniversities] = useState([]);
     const [ercPanels, setErcPanels] = useState([]);
@@ -253,30 +253,60 @@ function ItemsFilter({ filters, onFilterChange, onClearFilters }) {
                 }}>
                     Filters
                 </h3>
-                <button
-                    onClick={onClearFilters}
-                    style={{
-                        padding: '0.25rem 0.75rem',
-                        backgroundColor: 'transparent',
-                        color: '#7c6fd6',
-                        border: '1px solid #7c6fd6',
-                        borderRadius: '6px',
-                        fontSize: '0.85rem',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#7c6fd6';
-                        e.target.style.color = 'white';
-                    }}
-                    onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = 'transparent';
-                        e.target.style.color = '#7c6fd6';
-                    }}
-                >
-                    Clear All
-                </button>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                        <button
+                            onClick={onClearFilters}
+                            style={{
+                                padding: '0.25rem 0.75rem',
+                                backgroundColor: 'transparent',
+                                color: '#7c6fd6',
+                                border: '1px solid #7c6fd6',
+                                borderRadius: '6px',
+                                fontSize: '0.85rem',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.target.style.backgroundColor = '#7c6fd6';
+                                e.target.style.color = 'white';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.target.style.backgroundColor = 'transparent';
+                                e.target.style.color = '#7c6fd6';
+                            }}
+                        >
+                            Clear All
+                        </button>
+                        <button
+                            onClick={onSubscribeRequest}
+                            disabled={!canSubscribe}
+                            style={{
+                                padding: '0.25rem 0.75rem',
+                                backgroundColor: !canSubscribe ? '#e9ecef' : '#7c6fd6',
+                                color: !canSubscribe ? '#adb5bd' : 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                fontSize: '0.85rem',
+                                fontWeight: '600',
+                                cursor: !canSubscribe ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.2s',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.35rem'
+                            }}
+                            title={!canSubscribe ? 'Login to save alerts' : 'Get notified when new items match these filters'}
+                        >
+                            🔔 Notify me
+                        </button>
+                    </div>
+                    {subscriptionHint && (
+                        <span style={{ fontSize: '0.75rem', color: '#dc3545' }}>
+                            {subscriptionHint}
+                        </span>
+                    )}
+                </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>

@@ -1,10 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { base_url } from "../api";
 import ItemCard from "../components/item_card";
 import ItemsFilter from "../components/items_filter";
 import Navbar from "../components/navbar";
+import { AuthContext } from "../components/AuthContext.jsx";
+import { notificationsApi } from "../services/notifications";
 
 const logo_neolaia = "/logoNEOLAiA.png";
 const eu_logo = "/eu_logo.png";
@@ -31,7 +33,131 @@ function ItemsList() {
         expiration_to: ''
     });
     const [showFilters, setShowFilters] = useState(false);
-    const token = localStorage.getItem("token");
+    const { token } = useContext(AuthContext);
+    const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
+    const [subscriptionName, setSubscriptionName] = useState('');
+    const [subscriptionEmailOptIn, setSubscriptionEmailOptIn] = useState(true);
+    const [subscriptionSubmitting, setSubscriptionSubmitting] = useState(false);
+    const [subscriptionModalError, setSubscriptionModalError] = useState(null);
+    const [subscriptionBanner, setSubscriptionBanner] = useState(null);
+
+    const describeFilterValue = (key, value) => {
+        if (!value) {
+            return null;
+        }
+
+        const shortId = (val) => {
+            if (typeof val !== 'string') {
+                return val;
+            }
+            return val.length > 6 ? `${val.slice(0, 6)}…` : val;
+        };
+
+        switch (key) {
+            case 'search':
+                return `Search: "${value}"`;
+            case 'category_id':
+                return `Category filter (${shortId(value)})`;
+            case 'university':
+                return `University filter (${shortId(value)})`;
+            case 'item_status':
+                return `Status: ${value}`;
+            case 'languages':
+                return `Language: ${value}`;
+            case 'erc_area':
+                return `ERC area: ${value}`;
+            case 'erc_panel':
+                return `ERC panel (${shortId(value)})`;
+            case 'erc_keyword':
+                return `ERC keyword (${shortId(value)})`;
+            case 'start_date_from':
+                return `Start ≥ ${value}`;
+            case 'start_date_to':
+                return `Start ≤ ${value}`;
+            case 'end_date_from':
+                return `End ≥ ${value}`;
+            case 'end_date_to':
+                return `End ≤ ${value}`;
+            case 'expiration_from':
+                return `Expiration ≥ ${value}`;
+            case 'expiration_to':
+                return `Expiration ≤ ${value}`;
+            default:
+                return `${key}: ${value}`;
+        }
+    };
+
+    const activeFilterChips = useMemo(() => {
+        return Object.entries(filters)
+            .filter(([, value]) => Boolean(value))
+            .map(([key, value]) => describeFilterValue(key, value))
+            .filter(Boolean);
+    }, [filters]);
+
+    const hasSubscriptionCriteria = activeFilterChips.length > 0;
+
+    const buildDefaultSubscriptionName = () => {
+        if (activeFilterChips.length === 0) {
+            return 'All new items';
+        }
+        const primaryChip = activeFilterChips[0];
+        return `Alert • ${primaryChip}`;
+    };
+
+    const openSubscriptionModal = () => {
+        if (!token) {
+            setSubscriptionBanner({ type: 'error', message: 'Please login to create alerts.' });
+            navigate('/login');
+            return;
+        }
+
+        if (!hasSubscriptionCriteria) {
+            setSubscriptionBanner({ type: 'error', message: 'Select at least one filter before saving an alert.' });
+            return;
+        }
+
+        setSubscriptionName(buildDefaultSubscriptionName());
+        setSubscriptionEmailOptIn(true);
+        setSubscriptionModalError(null);
+        setSubscriptionModalOpen(true);
+    };
+
+    const closeSubscriptionModal = () => {
+        setSubscriptionModalOpen(false);
+        setSubscriptionModalError(null);
+    };
+
+    const handleCreateSubscription = async () => {
+        if (!token) {
+            setSubscriptionBanner({ type: 'error', message: 'Please login to create alerts.' });
+            navigate('/login');
+            return;
+        }
+
+        if (!hasSubscriptionCriteria) {
+            setSubscriptionModalError('Select at least one filter before saving an alert.');
+            return;
+        }
+
+        setSubscriptionSubmitting(true);
+        setSubscriptionModalError(null);
+
+        try {
+            await notificationsApi.createSubscription(token, {
+                name: subscriptionName.trim() || buildDefaultSubscriptionName(),
+                criteria: filters,
+                notify_via_email: subscriptionEmailOptIn
+            });
+            setSubscriptionModalOpen(false);
+            setSubscriptionBanner({ type: 'success', message: 'Alert saved. You will be notified when new items match these filters.' });
+        } catch (error) {
+            const fallback = 'Unable to create alert. Please try again.';
+            const message = error.response?.data?.error?.message || fallback;
+            setSubscriptionModalError(message);
+        } finally {
+            setSubscriptionSubmitting(false);
+        }
+    };
 
     useEffect(() => {
         fetchItems();
@@ -172,6 +298,36 @@ function ItemsList() {
                 margin: '0 auto',
                 padding: '2rem 1rem'
             }}>
+                {subscriptionBanner && (
+                    <div style={{
+                        marginBottom: '1.25rem',
+                        padding: '1rem',
+                        borderRadius: '12px',
+                        border: `1px solid ${subscriptionBanner.type === 'success' ? '#51cf66' : '#ff6b6b'}`,
+                        backgroundColor: subscriptionBanner.type === 'success' ? '#e6fcf5' : '#fff5f5',
+                        color: subscriptionBanner.type === 'success' ? '#2f9e44' : '#c92a2a',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: '1rem'
+                    }}>
+                        <span>{subscriptionBanner.message}</span>
+                        <button
+                            onClick={() => setSubscriptionBanner(null)}
+                            style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'inherit',
+                                fontWeight: '700',
+                                cursor: 'pointer',
+                                fontSize: '1rem'
+                            }}
+                            aria-label="Dismiss notification"
+                        >
+                            ×
+                        </button>
+                    </div>
+                )}
                 {/* Page Header with Filter Toggle */}
                 <div style={{
                     display: 'flex',
@@ -264,6 +420,9 @@ function ItemsList() {
                             filters={filters}
                             onFilterChange={handleFilterChange}
                             onClearFilters={clearFilters}
+                            onSubscribeRequest={openSubscriptionModal}
+                            canSubscribe={Boolean(token)}
+                            subscriptionHint={!token ? 'Login to create alerts' : ''}
                         />
                     </div>
                 )}
@@ -354,6 +513,149 @@ function ItemsList() {
                     )}
                 </div>
             </div>
+
+            {subscriptionModalOpen && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    backgroundColor: 'rgba(33, 37, 41, 0.65)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '1rem',
+                    zIndex: 1200
+                }}>
+                    <div style={{
+                        width: '100%',
+                        maxWidth: '520px',
+                        backgroundColor: 'white',
+                        borderRadius: '16px',
+                        padding: '2rem',
+                        boxShadow: '0 25px 60px rgba(0, 0, 0, 0.25)',
+                        position: 'relative'
+                    }}>
+                        <button
+                            onClick={closeSubscriptionModal}
+                            style={{
+                                position: 'absolute',
+                                top: '1rem',
+                                right: '1rem',
+                                background: 'transparent',
+                                border: 'none',
+                                fontSize: '1.25rem',
+                                cursor: 'pointer',
+                                color: '#adb5bd'
+                            }}
+                            aria-label="Close subscription dialog"
+                        >
+                            ×
+                        </button>
+                        <h3 style={{ marginTop: 0, color: '#213547' }}>Notify me about new items</h3>
+                        <p style={{ color: '#6c757d', marginTop: '0.25rem' }}>
+                            Save the current filters and get notified when matching items are published.
+                        </p>
+
+                        {subscriptionModalError && (
+                            <div style={{
+                                margin: '1rem 0',
+                                padding: '0.75rem',
+                                borderRadius: '8px',
+                                border: '1px solid #ff6b6b',
+                                backgroundColor: '#fff5f5',
+                                color: '#c92a2a'
+                            }}>
+                                {subscriptionModalError}
+                            </div>
+                        )}
+
+                        <div style={{ marginBottom: '1rem' }}>
+                            <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', color: '#495057' }}>
+                                Alert name
+                            </label>
+                            <input
+                                type="text"
+                                value={subscriptionName}
+                                onChange={(e) => setSubscriptionName(e.target.value)}
+                                placeholder="e.g. English events from my university"
+                                style={{
+                                    width: '100%',
+                                    padding: '0.75rem',
+                                    borderRadius: '8px',
+                                    border: '1px solid #dee2e6',
+                                    fontSize: '0.95rem'
+                                }}
+                            />
+                        </div>
+
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: '#495057' }}>
+                            <input
+                                type="checkbox"
+                                checked={subscriptionEmailOptIn}
+                                onChange={(e) => setSubscriptionEmailOptIn(e.target.checked)}
+                            />
+                            Email me when a matching item appears
+                        </label>
+
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <p style={{ fontWeight: 600, color: '#495057', marginBottom: '0.5rem' }}>Active filters</p>
+                            {activeFilterChips.length === 0 ? (
+                                <p style={{ color: '#6c757d', fontSize: '0.9rem' }}>
+                                    No filters selected. Choose at least one filter to save an alert.
+                                </p>
+                            ) : (
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                    {activeFilterChips.map((chip) => (
+                                        <span
+                                            key={chip}
+                                            style={{
+                                                backgroundColor: '#f0f0ff',
+                                                border: '1px solid #7c6fd6',
+                                                borderRadius: '999px',
+                                                padding: '0.3rem 0.85rem',
+                                                fontSize: '0.85rem',
+                                                color: '#5a4fb9'
+                                            }}
+                                        >
+                                            {chip}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                            <button
+                                onClick={closeSubscriptionModal}
+                                style={{
+                                    padding: '0.65rem 1.25rem',
+                                    borderRadius: '8px',
+                                    border: '1px solid #dee2e6',
+                                    backgroundColor: 'white',
+                                    cursor: 'pointer'
+                                }}
+                                disabled={subscriptionSubmitting}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleCreateSubscription}
+                                disabled={subscriptionSubmitting || activeFilterChips.length === 0}
+                                style={{
+                                    padding: '0.65rem 1.65rem',
+                                    borderRadius: '8px',
+                                    border: 'none',
+                                    backgroundColor: subscriptionSubmitting || activeFilterChips.length === 0 ? '#cfd2f1' : '#7c6fd6',
+                                    color: 'white',
+                                    fontWeight: 600,
+                                    cursor: subscriptionSubmitting || activeFilterChips.length === 0 ? 'not-allowed' : 'pointer'
+                                }}
+                            >
+                                {subscriptionSubmitting ? 'Saving…' : 'Save alert'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <style>{`
                 @keyframes spin {

@@ -1,0 +1,52 @@
+{
+  "kind": "collectionType",
+  "collectionName": "notification_subscriptions",
+  "info": {
+    "singularName": "notification-subscription",
+    "pluralName": "notification-subscriptions",
+    "displayName": "Notification Subscriptions"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "text"
+    },
+    "criteria": {
+      "type": "json",
+      "required": true
+    },
+    "criteria_signature": {
+      "type": "string"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "notify_via_email": {
+      "type": "boolean",
+      "default": true
+    },
+    "last_triggered_at": {
+      "type": "datetime"
+    },
+    "seller": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::seller.seller",
+      "inversedBy": "notification_subscriptions"
+    },
+    "notifications": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::notification.notification",
+      "mappedBy": "subscription"
+    }
+  }
+}

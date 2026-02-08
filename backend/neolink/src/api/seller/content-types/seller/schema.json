@@ -77,6 +77,18 @@
       "relation": "manyToMany",
       "target": "api::item.item",
       "mappedBy": "interested_users"
+    },
+    "notification_subscriptions": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::notification-subscription.notification-subscription",
+      "mappedBy": "seller"
+    },
+    "notifications": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::notification.notification",
+      "mappedBy": "seller"
     }
   }
 }

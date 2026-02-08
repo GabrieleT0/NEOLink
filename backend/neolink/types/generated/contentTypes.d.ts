@@ -764,6 +764,10 @@ export interface ApiItemItem extends Struct.CollectionTypeSchema {
       Schema.Attribute.Private;
     multimedial_material_provided: Schema.Attribute.Text;
     name: Schema.Attribute.String;
+    notifications: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::notification.notification'
+    >;
     pedagogical_objectives: Schema.Attribute.Text;
     publishedAt: Schema.Attribute.DateTime;
     second_level_structure: Schema.Attribute.Relation<
@@ -778,6 +782,86 @@ export interface ApiItemItem extends Struct.CollectionTypeSchema {
       'oneToOne',
       'api::university.university'
     >;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiNotificationSubscriptionNotificationSubscription
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'notification_subscriptions';
+  info: {
+    displayName: 'Notification Subscriptions';
+    pluralName: 'notification-subscriptions';
+    singularName: 'notification-subscription';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    criteria: Schema.Attribute.JSON & Schema.Attribute.Required;
+    criteria_signature: Schema.Attribute.String;
+    description: Schema.Attribute.Text;
+    is_active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    last_triggered_at: Schema.Attribute.DateTime;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::notification-subscription.notification-subscription'
+    > &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    notifications: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::notification.notification'
+    >;
+    notify_via_email: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<true>;
+    publishedAt: Schema.Attribute.DateTime;
+    seller: Schema.Attribute.Relation<'manyToOne', 'api::seller.seller'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiNotificationNotification
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'notifications';
+  info: {
+    displayName: 'Notifications';
+    pluralName: 'notifications';
+    singularName: 'notification';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    body: Schema.Attribute.Text;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    delivered_at: Schema.Attribute.DateTime;
+    email_sent_at: Schema.Attribute.DateTime;
+    is_read: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    item: Schema.Attribute.Relation<'manyToOne', 'api::item.item'>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::notification.notification'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    seller: Schema.Attribute.Relation<'manyToOne', 'api::seller.seller'>;
+    subscription: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::notification-subscription.notification-subscription'
+    >;
+    title: Schema.Attribute.String & Schema.Attribute.Required;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -844,6 +928,14 @@ export interface ApiSellerSeller extends Struct.CollectionTypeSchema {
       'api::seller.seller'
     > &
       Schema.Attribute.Private;
+    notification_subscriptions: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::notification-subscription.notification-subscription'
+    >;
+    notifications: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::notification.notification'
+    >;
     orcid_link: Schema.Attribute.String;
     orh_id: Schema.Attribute.Integer;
     OTP: Schema.Attribute.Text;
@@ -1410,6 +1502,8 @@ declare module '@strapi/strapi' {
       'api::isced-narrow-field.isced-narrow-field': ApiIscedNarrowFieldIscedNarrowField;
       'api::item-category.item-category': ApiItemCategoryItemCategory;
       'api::item.item': ApiItemItem;
+      'api::notification-subscription.notification-subscription': ApiNotificationSubscriptionNotificationSubscription;
+      'api::notification.notification': ApiNotificationNotification;
       'api::second-level-structure.second-level-structure': ApiSecondLevelStructureSecondLevelStructure;
       'api::seller.seller': ApiSellerSeller;
       'api::university.university': ApiUniversityUniversity;

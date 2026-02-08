@@ -1,15 +1,18 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { notificationsApi } from "../services/notifications";
 
 const logo_neolaia = `${import.meta.env.BASE_URL}logo.png`;
 const eu_logo = `${import.meta.env.BASE_URL}eu_logo.png`;
+const NOTIFICATIONS_UPDATED_EVENT = 'neolink-notifications-updated';
 
 function Navbar({ token }) {
     const navigate = useNavigate();
     const location = useLocation();
     const [userData, setUserData] = useState(null);
     const [showMobileMenu, setShowMobileMenu] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0);
 
     useEffect(() => {
         if (token) {
@@ -22,6 +25,51 @@ function Navbar({ token }) {
         }
     }, [token]);
 
+    const fetchUnreadCount = useCallback(async () => {
+        if (!token) {
+            return;
+        }
+        try {
+            const response = await notificationsApi.getUnreadCount(token);
+            const count = response?.data?.count ?? 0;
+            setUnreadCount(count);
+        } catch (error) {
+            console.error('Failed to load unread notifications', error);
+        }
+    }, [token]);
+
+    useEffect(() => {
+        let intervalId = null;
+
+        if (token) {
+            fetchUnreadCount();
+            intervalId = setInterval(fetchUnreadCount, 60000);
+        } else {
+            setUnreadCount(0);
+        }
+
+        return () => {
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+        };
+    }, [token, fetchUnreadCount]);
+
+    useEffect(() => {
+        if (!token || typeof window === 'undefined') {
+            return;
+        }
+
+        const handleNotificationsUpdate = () => {
+            fetchUnreadCount();
+        };
+
+        window.addEventListener(NOTIFICATIONS_UPDATED_EVENT, handleNotificationsUpdate);
+        return () => {
+            window.removeEventListener(NOTIFICATIONS_UPDATED_EVENT, handleNotificationsUpdate);
+        };
+    }, [token, fetchUnreadCount]);
+
     const handleLogout = () => {
         localStorage.removeItem("token");
         navigate("/login");
@@ -32,7 +80,8 @@ function Navbar({ token }) {
         { path: "/items", label: "Browse Items", icon: "📚" },
         ...(token ? [
             { path: "/create-item", label: "Create Item", icon: "➕" },
-            { path: "/my-items", label: "My Items", icon: "📋" }
+            { path: "/my-items", label: "My Items", icon: "📋" },
+            { path: "/notifications", label: "Notifications", icon: "🔔" }
         ] : [])
     ];
 
@@ -40,16 +89,40 @@ function Navbar({ token }) {
         return location.pathname === path;
     };
 
+    const renderBadge = (path) => {
+        if (path !== '/notifications' || unreadCount <= 0) {
+            return null;
+        }
+        const displayCount = unreadCount > 9 ? '9+' : unreadCount;
+        return (
+            <span
+                style={{
+                    backgroundColor: '#ff6b6b',
+                    color: 'white',
+                    borderRadius: '999px',
+                    padding: '0 0.4rem',
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    minWidth: '1.25rem',
+                    textAlign: 'center',
+                    lineHeight: '1.25rem'
+                }}
+            >
+                {displayCount}
+            </span>
+        );
+    };
+
     return (
         <nav style={{
-            padding: '1rem 0',
-            borderBottom: '1px solid #dee2e6',
+            padding: '1.1rem 0',
+            borderBottom: '1px solid #e8eef3',
             backgroundColor: 'white',
             width: '100%',
             position: 'sticky',
             top: 0,
             zIndex: 1000,
-            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)'
         }}>
             <style>{`
                 @keyframes slideDown {
@@ -100,10 +173,10 @@ function Navbar({ token }) {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                padding: '0 1rem',
-                maxWidth: '1400px',
-                margin: '0 auto',
-                gap: '1rem'
+                padding: '0 3rem',
+                width: '100%',
+                boxSizing: 'border-box',
+                gap: '2rem'
             }}>
                 {/* Logo Section */}
                 <div style={{ 
@@ -132,10 +205,11 @@ function Navbar({ token }) {
                 <div className="nav-desktop-links" style={{
                     display: 'none',
                     alignItems: 'center',
-                    gap: '0.75rem',
+                    gap: '0.5rem',
                     flex: '1 1 auto',
-                    justifyContent: 'center',
-                    flexWrap: 'wrap'
+                    justifyContent: 'flex-start',
+                    flexWrap: 'wrap',
+                    padding: '0 1rem'
                 }}>
                     {navItems.map(item => (
                         <button
@@ -170,7 +244,10 @@ function Navbar({ token }) {
                             }}
                         >
                             <span>{item.icon}</span>
-                            <span>{item.label}</span>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                {item.label}
+                                {renderBadge(item.path)}
+                            </span>
                         </button>
                     ))}
                 </div>
@@ -179,14 +256,14 @@ function Navbar({ token }) {
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.75rem',
+                    gap: '1.25rem',
                     minWidth: 'fit-content'
                 }}>
                     {/* Desktop User Menu */}
                     <div className="nav-desktop-user" style={{
                         display: 'none',
                         alignItems: 'center',
-                        gap: '0.75rem'
+                        gap: '1rem'
                     }}>
                         {token && userData ? (
                             <>
@@ -194,7 +271,7 @@ function Navbar({ token }) {
                                     display: 'flex',
                                     flexDirection: 'column',
                                     alignItems: 'flex-end',
-                                    maxWidth: '150px'
+                                    maxWidth: '200px'
                                 }}>
                                     <span style={{
                                         fontSize: '0.85rem',
@@ -384,7 +461,10 @@ function Navbar({ token }) {
                                 }}
                             >
                                 <span style={{ fontSize: '1.2rem' }}>{item.icon}</span>
-                                <span>{item.label}</span>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                    {item.label}
+                                    {renderBadge(item.path)}
+                                </span>
                             </button>
                         ))}
 
