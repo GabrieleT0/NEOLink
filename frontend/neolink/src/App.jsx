@@ -12,6 +12,7 @@ import EditItem from './pages/edit_item.jsx';
 import MyItems from './pages/myitems.jsx';
 import PrivacyPolicy from './pages/privacy_policy.jsx';
 import Notifications from './pages/notifications.jsx';
+import About from './pages/about.jsx';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
           <Route path="/my-items" element={<MyItems />} />
           <Route path="/privacy_policy" element={<PrivacyPolicy />} />
           <Route path="/notifications" element={<Notifications />} />
+          <Route path="/about" element={<About />} />
         </Routes>
       </Router>
   );
