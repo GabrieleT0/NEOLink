@@ -31,10 +31,13 @@ function Login(){
             // Store the token from Shibboleth authentication
             localStorage.setItem("token", tokenFromUrl);
             setToken(tokenFromUrl);
-            // Clean the URL
+            // Clean the URL and navigate away
             window.history.replaceState({}, document.title, window.location.pathname);
+            // Navigate immediately since we just stored a fresh valid token
+            navigate(from, { state: { token: tokenFromUrl }, replace: true });
+            return;
         }
-    }, [searchParams, setToken]);
+    }, [searchParams, setToken, navigate, from]);
     
     useEffect(() => {
         if (loading){
@@ -45,7 +48,7 @@ function Login(){
         
         if(token && isValid){
             // Navigate to the intended destination (either the original page or personal page)
-            navigate(from, { state: { token } });
+            navigate(from, { state: { token }, replace: true });
         }
     }, [loading, token, navigate, from]);
 
@@ -56,19 +59,6 @@ function Login(){
         // The SP will authenticate and redirect back to /api/auth/shibboleth
         window.location.href = '/Shibboleth.sso/Login?target=/api/auth/shibboleth';
     };
-    
-    useEffect(() => {
-        if (loading){
-            return;
-        }
-        const isValid = token_is_valid();
-        setTokenValidity(isValid);
-        
-        if(token && isValid){
-            // Navigate to the intended destination (either the original page or personal page)
-            navigate(from, { state: { token } });
-        }
-    }, [loading, token, navigate, from]);
     
     return(
         <div style={{ 
