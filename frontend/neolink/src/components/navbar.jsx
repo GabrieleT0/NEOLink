@@ -88,7 +88,7 @@ function Navbar({ token }) {
         ...(token ? [
             { path: "/create-item", label: "Create Item", icon: "➕" },
             { path: "/my-items", label: "My Items", icon: "📋" },
-            { path: "/notifications", label: "Notifications", icon: "🔔" }
+            // { path: "/notifications", label: "Notifications", icon: "🔔" }
         ] : [])
     ];
 

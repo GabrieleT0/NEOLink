@@ -294,7 +294,8 @@ function ItemsFilter({ filters, onFilterChange, onClearFilters, onSubscribeReque
                                 transition: 'all 0.2s',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '0.35rem'
+                                gap: '0.35rem',
+                                display: 'none'
                             }}
                             title={!canSubscribe ? 'Login to save alerts' : 'Get notified when new items match these filters'}
                         >
