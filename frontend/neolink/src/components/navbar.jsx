@@ -70,9 +70,16 @@ function Navbar({ token }) {
         };
     }, [token, fetchUnreadCount]);
 
+    const SHIBBOLETH_ENABLED = import.meta.env.VITE_SHIBBOLETH_ENABLED === 'true';
+
     const handleLogout = () => {
         localStorage.removeItem("token");
-        navigate("/login");
+        if (SHIBBOLETH_ENABLED) {
+            // Redirect to Shibboleth logout, which will clear the IdP session
+            window.location.href = '/Shibboleth.sso/Logout?return=/login';
+        } else {
+            navigate("/login");
+        }
     };
 
     const navItems = [

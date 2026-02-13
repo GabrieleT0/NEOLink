@@ -89,6 +89,18 @@
       "relation": "oneToMany",
       "target": "api::notification.notification",
       "mappedBy": "seller"
+    },
+    "shibboleth_id": {
+      "type": "string"
+    },
+    "shibboleth_affiliation": {
+      "type": "string"
+    },
+    "shibboleth_session_id": {
+      "type": "string"
+    },
+    "last_shibboleth_login": {
+      "type": "datetime"
     }
   }
 }

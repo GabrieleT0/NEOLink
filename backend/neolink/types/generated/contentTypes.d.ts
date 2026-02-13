@@ -921,6 +921,7 @@ export interface ApiSellerSeller extends Struct.CollectionTypeSchema {
     first_level_structure: Schema.Attribute.String;
     full_name: Schema.Attribute.String;
     interested_items: Schema.Attribute.Relation<'manyToMany', 'api::item.item'>;
+    last_shibboleth_login: Schema.Attribute.DateTime;
     linkedin_link: Schema.Attribute.String;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
@@ -946,6 +947,9 @@ export interface ApiSellerSeller extends Struct.CollectionTypeSchema {
     research_group_link: Schema.Attribute.String;
     research_units_tours: Schema.Attribute.String;
     second_level_structure: Schema.Attribute.String;
+    shibboleth_affiliation: Schema.Attribute.String;
+    shibboleth_id: Schema.Attribute.String;
+    shibboleth_session_id: Schema.Attribute.String;
     specific_research_units_tours: Schema.Attribute.String;
     university_name: Schema.Attribute.String;
     updatedAt: Schema.Attribute.DateTime;

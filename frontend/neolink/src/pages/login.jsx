@@ -4,21 +4,58 @@ import Auth from "../components/auth";
 import { token_is_valid } from "../utils";
 import PrivacyPolicy from "../components/privacy_policy"; 
 import AcceptPolicy from "../components/accept_policy";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
+import { shibboleth_enabled } from "../api";
 
 const logo_neolaia = `${import.meta.env.BASE_URL}logoNEOLAiA.png`;
 const eu_logo = `${import.meta.env.BASE_URL}eu_logo.png`;
 const logo_neolink = `${import.meta.env.BASE_URL}logo.png`;
+const SHIBBOLETH_ENABLED = shibboleth_enabled;
 
 function Login(){
     const authContext = useContext(AuthContext);
     const navigate = useNavigate();
     const location = useLocation();
-    const { token, loading } = authContext;
+    const [searchParams] = useSearchParams();
+    const { token, setToken, loading } = authContext;
     const [token_validity, setTokenValidity] = useState(false);
+    const [shibbolethLoading, setShibbolethLoading] = useState(false);
     
     // Get the redirect path from location state, default to personal page
     const from = location.state?.from || "/personal-page";
+
+    // Handle token from Shibboleth callback
+    useEffect(() => {
+        const tokenFromUrl = searchParams.get('token');
+        if (tokenFromUrl) {
+            // Store the token from Shibboleth authentication
+            localStorage.setItem("token", tokenFromUrl);
+            setToken(tokenFromUrl);
+            // Clean the URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    }, [searchParams, setToken]);
+    
+    useEffect(() => {
+        if (loading){
+            return;
+        }
+        const isValid = token_is_valid();
+        setTokenValidity(isValid);
+        
+        if(token && isValid){
+            // Navigate to the intended destination (either the original page or personal page)
+            navigate(from, { state: { token } });
+        }
+    }, [loading, token, navigate, from]);
+
+    // Handle Shibboleth login
+    const handleShibbolethLogin = () => {
+        setShibbolethLoading(true);
+        // Redirect to Shibboleth login
+        // The SP will authenticate and redirect back to /api/auth/shibboleth
+        window.location.href = '/Shibboleth.sso/Login?target=/api/auth/shibboleth';
+    };
     
     useEffect(() => {
         if (loading){
@@ -104,10 +141,87 @@ function Login(){
                             </p>
                         </div>
                         
-                        <Auth 
-                            accept_policy_message={<AcceptPolicy />} 
-                            privacy_policy={<PrivacyPolicy />} 
-                        />
+                        {SHIBBOLETH_ENABLED ? (
+                            /* Shibboleth/eduGAIN Login */
+                            <div>
+                                <button
+                                    onClick={handleShibbolethLogin}
+                                    disabled={shibbolethLoading}
+                                    style={{
+                                        width: '100%',
+                                        padding: '1rem 1.5rem',
+                                        backgroundColor: '#7c6fd6',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        fontSize: '1rem',
+                                        fontWeight: '600',
+                                        cursor: shibbolethLoading ? 'not-allowed' : 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '0.75rem',
+                                        transition: 'background-color 0.2s',
+                                        opacity: shibbolethLoading ? 0.7 : 1
+                                    }}
+                                    onMouseOver={(e) => !shibbolethLoading && (e.target.style.backgroundColor = '#6b5fc5')}
+                                    onMouseOut={(e) => e.target.style.backgroundColor = '#7c6fd6'}
+                                >
+                                    {shibbolethLoading ? (
+                                        <>
+                                            <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                            Redirecting to your institution...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                                <path d="M2 17l10 5 10-5"/>
+                                                <path d="M2 12l10 5 10-5"/>
+                                            </svg>
+                                            Login with your Institution (eduGAIN)
+                                        </>
+                                    )}
+                                </button>
+                                
+                                <div style={{
+                                    marginTop: '1.5rem',
+                                    padding: '1rem',
+                                    backgroundColor: '#f8f9fa',
+                                    borderRadius: '8px',
+                                    fontSize: '0.9rem',
+                                    color: '#6c757d'
+                                }}>
+                                    <p style={{ margin: '0 0 0.5rem 0' }}>
+                                        <strong>How it works:</strong>
+                                    </p>
+                                    <ul style={{ margin: 0, paddingLeft: '1.25rem' }}>
+                                        <li>Click the button above</li>
+                                        <li>Select your university from the list</li>
+                                        <li>Login with your institutional credentials</li>
+                                        <li>You'll be redirected back to NEOLink</li>
+                                    </ul>
+                                </div>
+
+                                <p style={{
+                                    marginTop: '1.5rem',
+                                    textAlign: 'center',
+                                    fontSize: '0.85rem',
+                                    color: '#6c757d'
+                                }}>
+                                    By signing in, you agree to our{' '}
+                                    <a href="/privacy_policy" style={{ color: '#7c6fd6' }}>
+                                        Privacy Policy
+                                    </a>
+                                </p>
+                            </div>
+                        ) : (
+                            /* Legacy OTP Login */
+                            <Auth 
+                                accept_policy_message={<AcceptPolicy />} 
+                                privacy_policy={<PrivacyPolicy />} 
+                            />
+                        )}
                     </div>
                 )}
             </div>
