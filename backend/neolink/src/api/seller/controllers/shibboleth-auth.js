@@ -161,7 +161,7 @@ module.exports = {
             });
 
             // Redirect to frontend with token
-            const frontendUrl = process.env.FRONTEND_URL || '';
+            const frontendUrl = (process.env.FRONTEND_URL || '').replace(/\/$/, ''); // Remove trailing slash
             const redirectUrl = `${frontendUrl}/login?token=${encodeURIComponent(token)}`;
             
             ctx.redirect(redirectUrl);
