@@ -33,7 +33,7 @@ module.exports = {
 
             // Use cn or mail as primary identifier
             const email = shibHeaders.mail || shibHeaders.cn;
-            const uniqueId = shibHeaders.cn || shibHeaders.persistentId || shibHeaders.mail;
+            const uniqueId = shibHeaders.persistentId || shibHeaders.mail || shibHeaders.cn; // Fallback to email or cn if no persistentId
 
             // Check if user already exists
             let seller = await strapi.db.query('api::seller.seller').findOne({
@@ -95,48 +95,48 @@ module.exports = {
                     if (virtual_cafe_profile && virtual_cafe_profile.length > 0){
                         virtual_cafe_id = virtual_cafe_profile[0].id || false;
                     }
-                    } catch (error){
-                                    console.log("Error fetching Discourse profile for email: " + email);
+                } catch (error){
+                                console.log("Error fetching Discourse profile for email: " + email);
+                }
+                try{
+                    const response_orh = await axios.get(`${process.env.ORH_API_URL}/neolaia-usr/?email=${email}`);
+                    const orh_profile = response_orh.data;
+                    if (orh_profile){
+                        university_name = orh_profile ? orh_profile.university_name : "";
+                        department_name = orh_profile ? orh_profile.department_name : "";
+                        faculty_name = orh_profile ? orh_profile.faculty_name : "";
+                        orcid_link = orh_profile ? orh_profile.orcid_link : "";
+                        research_group_link = orh_profile ? orh_profile.research_group_link : "";
+                        personal_page_link = orh_profile ? orh_profile.personal_page_link : "";
+                        research_units_tours = orh_profile ? orh_profile.research_units_tours : "";
+                        specific_research_units_tours = orh_profile ? orh_profile.specific_research_units_tours : "";
+                        orh_id = orh_profile ? orh_profile.user_id : "";
                     }
-                    try{
-                        const response_orh = await axios.get(`${process.env.ORH_API_URL}/neolaia-usr/?email=${email}`);
-                        const orh_profile = response_orh.data;
-                        if (orh_profile){
-                            university_name = orh_profile ? orh_profile.university_name : "";
-                            department_name = orh_profile ? orh_profile.department_name : "";
-                            faculty_name = orh_profile ? orh_profile.faculty_name : "";
-                            orcid_link = orh_profile ? orh_profile.orcid_link : "";
-                            research_group_link = orh_profile ? orh_profile.research_group_link : "";
-                            personal_page_link = orh_profile ? orh_profile.personal_page_link : "";
-                            research_units_tours = orh_profile ? orh_profile.research_units_tours : "";
-                            specific_research_units_tours = orh_profile ? orh_profile.specific_research_units_tours : "";
-                            orh_id = orh_profile ? orh_profile.user_id : "";
-                        }
-                        } catch (error){
-                            console.log("Error fetching ORH profile for email: " + email + " " + error);
-                        }
-                        seller = await strapi.entityService.create("api::seller.seller", {
-                                data:{
-                                    email: email,
-                                    shibboleth_id: uniqueId,
-                                    last_shibboleth_login: new Date().toISOString(),
-                                    // OTP fields not used with Shibboleth
-                                    otp_active: false,
-                                    "full_name": fullName,
-                                    shibboleth_affiliation: shibHeaders.affiliation,
-                                    shibboleth_session_id: shibHeaders.sessionId,
-                                    "research_group_link": research_group_link,
-                                    "personal_page_link": personal_page_link,
-                                    "university_name": university_name,
-                                    "first_level_structure": department_name,
-                                    "second_level_structure": faculty_name,
-                                    "orcid_link": orcid_link,
-                                    "research_units_tours": research_units_tours,
-                                    "specific_research_units_tours": specific_research_units_tours,
-                                    "virtual_cafe_id": virtual_cafe_id != false ? virtual_cafe_id : null,
-                                    "orh_id": orh_id != "" ? orh_id : null
-                                }
-                        })
+                    } catch (error){
+                        console.log("Error fetching ORH profile for email: " + email + " " + error);
+                    }
+                    seller = await strapi.entityService.create("api::seller.seller", {
+                            data:{
+                                email: email,
+                                shibboleth_id: uniqueId,
+                                last_shibboleth_login: new Date().toISOString(),
+                                // OTP fields not used with Shibboleth
+                                otp_active: false,
+                                "full_name": fullName,
+                                shibboleth_affiliation: shibHeaders.affiliation,
+                                shibboleth_session_id: shibHeaders.sessionId,
+                                "research_group_link": research_group_link,
+                                "personal_page_link": personal_page_link,
+                                "university_name": university_name,
+                                "first_level_structure": department_name,
+                                "second_level_structure": faculty_name,
+                                "orcid_link": orcid_link,
+                                "research_units_tours": research_units_tours,
+                                "specific_research_units_tours": specific_research_units_tours,
+                                "virtual_cafe_id": virtual_cafe_id != false ? virtual_cafe_id : null,
+                                "orh_id": orh_id != "" ? orh_id : null
+                            }
+                    })
             }
 
             // Generate JWT token
