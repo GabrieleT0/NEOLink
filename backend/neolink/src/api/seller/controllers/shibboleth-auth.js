@@ -33,7 +33,7 @@ module.exports = {
 
             // Use cn or mail as primary identifier
             const email = shibHeaders.mail || shibHeaders.cn;
-            const uniqueId = shibHeaders.persistentId || shibHeaders.mail || shibHeaders.cn; // Fallback to email or cn if no persistentId
+            const uniqueId = shibHeaders.persistentId || shibHeaders.cn || email; // Fallback to email or cn if no persistentId
 
             // Check if user already exists
             let seller = await strapi.db.query('api::seller.seller').findOne({
