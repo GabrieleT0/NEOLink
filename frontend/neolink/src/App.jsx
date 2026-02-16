@@ -18,7 +18,7 @@ function App() {
   return (
       <Router>
         <Routes>
-          <Route path='*' element={<Homepage />} /> 
+          <Route path='/' element={<Homepage />} /> 
           <Route path='/login' element={<Login />} /> 
           <Route path='/personal-page' element={<PersonalPage />} />
           <Route path="/create-item" element={<CreateItem />} />
@@ -29,6 +29,7 @@ function App() {
           <Route path="/privacy_policy" element={<PrivacyPolicy />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/about" element={<About />} />
+          <Route path="*" element={<Homepage />} />
         </Routes>
       </Router>
   );

@@ -6,7 +6,7 @@ const eu_logo = `${import.meta.env.BASE_URL}eu_logo.png`;
 const logo_neolink = `${import.meta.env.BASE_URL}logo.png`;
 import Navbar from "../components/navbar";
 import axios from "axios";
-import { getCategoryIcon } from "../utils";
+import { getCategoryIcon, token_is_valid } from "../utils";
 
 function PersonalPage() {
     const [userData, setUserData] = useState(null);
