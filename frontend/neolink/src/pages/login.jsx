@@ -180,12 +180,13 @@ function Login(){
                                     backgroundColor: '#f8f9fa',
                                     borderRadius: '8px',
                                     fontSize: '0.9rem',
-                                    color: '#6c757d'
+                                    color: '#6c757d',
+                                    textAlign: 'left'
                                 }}>
                                     <p style={{ margin: '0 0 0.5rem 0' }}>
                                         <strong>How it works:</strong>
                                     </p>
-                                    <ul style={{ margin: 0, paddingLeft: '1.25rem' }}>
+                                    <ul style={{ margin: 0, paddingLeft: '1.25rem', listStylePosition: 'outside' }}>
                                         <li>Click the button above</li>
                                         <li>Select your university from the list</li>
                                         <li>Login with your institutional credentials</li>
@@ -202,6 +203,17 @@ function Login(){
                                     By signing in, you agree to our{' '}
                                     <a href="/privacy_policy" style={{ color: '#7c6fd6' }}>
                                         Privacy Policy
+                                    </a>
+                                </p>
+                                
+                                <p style={{
+                                    marginTop: '1rem',
+                                    textAlign: 'center',
+                                    fontSize: '0.85rem',
+                                    color: '#6c757d'
+                                }}>
+                                    <a href="/about" style={{ color: '#7c6fd6' }}>
+                                        Learn more about NEOLink
                                     </a>
                                 </p>
                             </div>
