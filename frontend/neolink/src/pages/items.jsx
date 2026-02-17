@@ -160,7 +160,22 @@ function ItemsList() {
     };
 
     useEffect(() => {
-        fetchItems();
+        const searchChanged = prevSearchRef.current !== filters.search;
+        const languagesChanged = prevLanguagesRef.current !== filters.languages;
+
+        if (languagesChanged || searchChanged) {
+
+            const timer = setTimeout(() => {
+                fetchItems();
+                prevSearchRef.current = filters.search;
+                prevLanguagesRef.current = filters.languages;
+            }, 350)
+
+            return () => clearTimeout(timer);
+
+        } else {
+            fetchItems();
+        }
     }, [filters]);
 
     const fetchItems = async () => {
