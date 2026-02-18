@@ -11,12 +11,14 @@ import ItemDetail from './pages/item_detail.jsx';
 import EditItem from './pages/edit_item.jsx';
 import MyItems from './pages/myitems.jsx';
 import PrivacyPolicy from './pages/privacy_policy.jsx';
+import Notifications from './pages/notifications.jsx';
+import About from './pages/about.jsx';
 
 function App() {
   return (
       <Router>
         <Routes>
-          <Route path='*' element={<Homepage />} /> 
+          <Route path='/' element={<Homepage />} /> 
           <Route path='/login' element={<Login />} /> 
           <Route path='/personal-page' element={<PersonalPage />} />
           <Route path="/create-item" element={<CreateItem />} />
@@ -25,6 +27,9 @@ function App() {
           <Route path="/items/:documentId/edit" element={<EditItem />} />
           <Route path="/my-items" element={<MyItems />} />
           <Route path="/privacy_policy" element={<PrivacyPolicy />} />
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/about" element={<About />} />
+          <Route path="*" element={<Homepage />} />
         </Routes>
       </Router>
   );

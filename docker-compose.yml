@@ -43,6 +43,7 @@ services:
       TRANSFER_TOKEN_SALT: ${TRANSFER_TOKEN_SALT}
       DISCOURSE_URL: ${DISCOURSE_URL}
       DISCOURSE_API_TOKEN: ${DISCOURSE_API_TOKEN}
+      DISCOURSE_CONNECT_SECRET: ${DISCOURSE_CONNECT_SECRET}
       ORH_API_URL: ${ORH_API_URL}
       HOST_MAIL: ${HOST_MAIL}
       USER_MAIL: ${USER_MAIL}
@@ -68,9 +69,10 @@ services:
       context: ./frontend/neolink
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:1337}
+        VITE_API_URL: ${VITE_API_URL:-/api}
         VITE_DISCOURSE_URL: ${VITE_DISCOURSE_URL:-https://virtualcafe.example.com/}
         VITE_ORH_URL: ${VITE_ORH_URL:-https://data.example.com/research-hub}
+        VITE_SHIBBOLETH_ENABLED: ${VITE_SHIBBOLETH_ENABLED:-false}
     container_name: react_frontend
     restart: unless-stopped
     ports:

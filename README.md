@@ -1,5 +1,3 @@
-# NEOLink
-
 <p align="center">
   <img src="logo.png" alt="NEOLink Logo" width="200"/>
 </p>

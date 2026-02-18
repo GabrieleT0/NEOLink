@@ -204,12 +204,27 @@ const PrivacyPolicy = () => {
                     fontSize: '0.85rem'
                 }}>
                     <p style={{ margin: '0 0 0.25rem 0' }}>
-                        © 2024 University of Salerno - NEOLink | NEOLAiA Project
+                        © 2026 University of Salerno - NEOLink | NEOLAiA Project
                     </p>
                     <p style={{ margin: 0 }}>
                         <a href="mailto:ammicent@pec.unisa.it" style={linkStyle}>ammicent@pec.unisa.it</a>
                     </p>
                 </footer>
+
+                {/* Back Link */}
+                <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+                    <a
+                        href="/"
+                        style={{
+                            color: '#7c6fd6',
+                            textDecoration: 'none',
+                            fontSize: '0.95rem',
+                            fontWeight: '500'
+                        }}
+                    >
+                        ← Back to Home
+                    </a>
+                </div>
             </div>
         </div>
     );

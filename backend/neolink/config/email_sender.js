@@ -1,18 +1,24 @@
 const nodemailer = require("nodemailer");
+
+const createTransporter = () => nodemailer.createTransport({
+    host: process.env.HOST_MAIL,
+    port: 587,
+    secure: false,
+    auth:{
+        user: process.env.USER_MAIL,
+        pass: process.env.PASS_MAIL,
+    },
+});
+
+const sendMessage = async (message) => {
+    const transporter = createTransporter();
+    await transporter.sendMail(message);
+};
+
 module.exports = {
     async send_mail(email, random_string){
         try{
-            const transporter = nodemailer.createTransport({
-                host: process.env.HOST_MAIL,
-                port: 587,
-                secure: false,
-                auth:{
-                    user: process.env.USER_MAIL,
-                    pass: process.env.PASS_MAIL,
-                },
-            });
-
-            await transporter.sendMail({
+            await sendMessage({
 from: process.env.USER_MAIL,
 to: email,
 subject: 'NEOLink: Your Access Code',
@@ -93,6 +99,61 @@ text: `Your OTP password to access NEOLink is: ${random_string}\n\nThis code exp
         } catch (error){
             console.log(error)
             console.log('email not sent')
+        }
+    },
+    async send_notification_email({ to, itemName, itemStatus, itemUrl, subscriptionName, criteriaSummary }){
+        try{
+            const safeCriteria = criteriaSummary && criteriaSummary.length ? criteriaSummary : 'Any new item';
+            await sendMessage({
+                from: process.env.USER_MAIL,
+                to,
+                subject: `NEOLink alert: ${itemName}`,
+                html: `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #fafafa;">
+    <table role="presentation" style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td align="center" style="padding: 40px 20px;">
+                <table role="presentation" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <tr>
+                        <td style="padding: 30px 40px; border-bottom: 1px solid #e9ecef;">
+                            <h2 style="margin: 0; font-size: 22px; font-weight: 600; color: #213547;">A new item matches your alert</h2>
+                            <p style="margin: 0.25rem 0 0; color: #6c757d; font-size: 0.95rem;">${subscriptionName}</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 30px 40px;">
+                            <p style="margin: 0 0 1rem; color: #495057; font-size: 1rem;">${itemName} is now available on NEOLink.</p>
+                            <div style="border: 1px solid #e9ecef; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                                <p style="margin: 0 0 0.5rem; font-weight: 600; color: #213547;">Criteria</p>
+                                <p style="margin: 0; color: #6c757d; font-size: 0.9rem;">${safeCriteria}</p>
+                            </div>
+                            <p style="margin: 0 0 0.5rem; font-size: 0.9rem; color: #6c757d;">Status: <strong style="color: #213547;">${itemStatus || 'New'}</strong></p>
+                            <a href="${itemUrl}" style="display: inline-block; margin-top: 1rem; background-color: #7c6fd6; color: white; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; font-weight: 600;">Open item</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 20px 40px; background-color: #f8f9fa; border-top: 1px solid #e9ecef; border-radius: 0 0 12px 12px;">
+                            <p style="margin: 0; font-size: 0.8rem; color: #6c757d;">You are receiving this email because you asked to be notified about new NEOLink items that match "${subscriptionName}".</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+`,
+                text: `A new item matches your alert "${subscriptionName}" on NEOLink.\nItem: ${itemName}\nStatus: ${itemStatus || 'New'}\nCriteria: ${safeCriteria}\nLink: ${itemUrl}`
+            });
+        } catch (error){
+            console.log(error);
+            console.log('notification email not sent');
         }
     }
 }

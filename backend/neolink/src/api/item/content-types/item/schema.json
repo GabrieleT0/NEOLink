@@ -136,6 +136,12 @@
     },
     "first_topic_id": {
       "type": "integer"
+    },
+    "notifications": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::notification.notification",
+      "mappedBy": "item"
     }
   }
 }

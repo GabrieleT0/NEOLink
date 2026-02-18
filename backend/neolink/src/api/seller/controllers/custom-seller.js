@@ -55,7 +55,21 @@ module.exports = {
                 if (virtual_cafe_profile && virtual_cafe_profile.length > 0){
                     full_name = virtual_cafe_profile[0].name || "";
                     virtual_cafe_id = virtual_cafe_profile[0].id || false;
-                } 
+                    try {
+                        const bytes = new Uint8Array([...full_name].map(c => c.charCodeAt(0)));
+                        // Only re-decode if all char codes fit in a single byte (Latin-1 range)
+                        if ([...full_name].every(c => c.charCodeAt(0) < 256)) {
+                            const decoded = new TextDecoder('utf-8').decode(bytes);
+                            // Only use decoded version if it actually changed and is valid
+                            if (decoded && decoded !== full_name) {
+                                full_name = decoded;
+                            }
+                        }
+                    } catch (error) {
+                        // Keep original full_name if decoding fails
+                        console.log("Error decoding full_name for email: " + email);
+                    }
+                }
                 } catch (error){
                     console.log("Error fetching Discourse profile for email: " + email);
                 }
