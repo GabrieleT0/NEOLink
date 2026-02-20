@@ -13,7 +13,7 @@ const PrivacyPolicy = () => {
             }}>
                 {/* Header */}
                 <header style={{
-                    textAlign: 'center',
+                    textAlign: 'left',
                     marginBottom: '3rem',
                     paddingBottom: '2rem',
                     borderBottom: '2px solid #e9ecef'
@@ -107,7 +107,7 @@ const PrivacyPolicy = () => {
                             E-mail (used for registration and authentication)
                         </p>
                         <p>
-                            Common name ( used to configure the user logged into the system)
+                            Common name (used to configure the user logged into the system)
                         </p>
                         <p>
                             Affiliation (eduPersonScopedAffiliation) - used to allow access only to professors and researchers of the Universities.
@@ -205,7 +205,7 @@ const PrivacyPolicy = () => {
 
                 {/* Footer */}
                 <footer style={{
-                    textAlign: 'center',
+                    textAlign: 'left',
                     marginTop: '2rem',
                     paddingTop: '2rem',
                     borderTop: '2px solid #e9ecef',
@@ -221,7 +221,7 @@ const PrivacyPolicy = () => {
                 </footer>
 
                 {/* Back Link */}
-                <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+                <div style={{ textAlign: 'left', marginTop: '2rem' }}>
                     <a
                         href="/"
                         style={{
