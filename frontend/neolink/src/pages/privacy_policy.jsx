@@ -106,6 +106,15 @@ const PrivacyPolicy = () => {
                         <p>
                             E-mail (used for registration and authentication)
                         </p>
+                        <p>
+                            Common name ( used to configure the user logged into the system)
+                        </p>
+                        <p>
+                            Affiliation (eduPersonScopedAffiliation) - used to allow access only to professors and researchers of the Universities.
+                        </p>
+                        <p>
+                            ID (pairwise-id) - used to uniquely identify the user in the system.
+                        </p>
 
                         <p>
                             No special categories of personal data referred to in articles 9 and 10 of the 
