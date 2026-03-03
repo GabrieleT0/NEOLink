@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useContext } from "react";
+import { useState, useEffect, useMemo, useContext, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { base_url } from "../api";
@@ -34,6 +34,8 @@ function ItemsList() {
     });
     const [showFilters, setShowFilters] = useState(false);
     const { token } = useContext(AuthContext);
+    const prevSearchRef = useRef('');       
+    const prevLanguagesRef = useRef('');    
     const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
     const [subscriptionName, setSubscriptionName] = useState('');
     const [subscriptionEmailOptIn, setSubscriptionEmailOptIn] = useState(true);
