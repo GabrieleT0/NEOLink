@@ -146,7 +146,7 @@ function Navbar({ token }) {
                     }
                 }
 
-                @media (max-width: 768px) {
+                @media (max-width: 950px) {
                     .nav-desktop-links {
                         display: none !important;
                     }
@@ -158,7 +158,7 @@ function Navbar({ token }) {
                     }
                 }
 
-                @media (min-width: 769px) {
+                @media (min-width: 951px) {
                     .nav-desktop-links {
                         display: flex !important;
                     }
@@ -220,7 +220,6 @@ function Navbar({ token }) {
                     flex: '1 1 auto',
                     justifyContent: 'flex-start',
                     flexWrap: 'nowrap',
-                    overflow: 'hidden',
                 }}>
                     {navItems.map(item => (
                         <button
@@ -268,8 +267,9 @@ function Navbar({ token }) {
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '1.25rem',
-                    minWidth: 'fit-content'
+                    gap: '0.5rem',
+                    minWidth: 'fit-content',
+                    flexShrink: 0
                 }}>
                     {/* Desktop User Menu */}
                     <div className="nav-desktop-user" style={{
