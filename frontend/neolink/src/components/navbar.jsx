@@ -2,6 +2,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { useState, useEffect, useCallback } from "react";
 import { notificationsApi } from "../services/notifications";
+import { shibboleth_enabled } from "../api";
 
 const logo_neolaia = `${import.meta.env.BASE_URL}logo.png`;
 const eu_logo = `${import.meta.env.BASE_URL}eu_logo.png`;
@@ -70,11 +71,9 @@ function Navbar({ token }) {
         };
     }, [token, fetchUnreadCount]);
 
-    const SHIBBOLETH_ENABLED = import.meta.env.VITE_SHIBBOLETH_ENABLED === 'true';
-
     const handleLogout = () => {
         localStorage.removeItem("token");
-        if (SHIBBOLETH_ENABLED) {
+        if (shibboleth_enabled) {
             // Redirect to Shibboleth logout, which will clear the IdP session
             window.location.href = '/Shibboleth.sso/Logout?return=/login';
         } else {
