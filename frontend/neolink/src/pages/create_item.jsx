@@ -49,6 +49,8 @@ function CreateItem() {
         group_description: '',
         category_name: '',
         category_color: '',
+        notify_on_interest: true,
+        notify_on_interest_email: false,
     });
 
     useEffect(() => {

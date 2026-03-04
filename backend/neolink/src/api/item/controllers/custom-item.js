@@ -37,7 +37,9 @@ module.exports = {
                 first_level_structure, 
                 second_level_structure, 
                 offered_by, 
-                cover
+                cover,
+                notify_on_interest,
+                notify_on_interest_email
             } = ctx.request.body;
             
             const {group_display_name, group_description} = ctx.request.body;
@@ -257,6 +259,8 @@ module.exports = {
                         discourse_category_id: createdCategoryId ? parseInt(createdCategoryId) : null,
                         category_name: discourse_category_name,
                         group_name: group_name_sanitized,
+                        notify_on_interest: notify_on_interest !== undefined ? Boolean(notify_on_interest) : true,
+                        notify_on_interest_email: notify_on_interest_email !== undefined ? Boolean(notify_on_interest_email) : false,
                     },
                     populate: ['item_category']
                 });
@@ -312,10 +316,19 @@ ${process.env.FRONTEND_URL}items/${createdEntry.documentId || 'N/A'}`,
                             category: 101, 
                         };
 
-                        await axios.post(`${process.env.DISCOURSE_URL}/posts.json`, announcement_payload, {
+                        const announcement_response = await axios.post(`${process.env.DISCOURSE_URL}/posts.json`, announcement_payload, {
                             headers: {
                                 'Api-Key': process.env.DISCOURSE_API_TOKEN,
                                 'Api-Username': 'system'
+                            }
+                        });
+                        const news_topicid = announcement_response.data.topic_id;
+                        
+                        // Update Strapi entry with the announcement topic ID
+                        await strapi.documents("api::item.item").update({
+                            documentId: createdEntry.documentId,
+                            data: {
+                                discourse_news_topic_id: news_topicid
                             }
                         });
 
@@ -383,6 +396,12 @@ Join the conversation at the following link: ${process.env.DISCOURSE_URL}/t/${we
                         }
                     }
                 }
+
+                // Publish the final entry so all fields (including discourse IDs) are on the published version
+                await strapi.documents("api::item.item").publish({
+                    documentId: createdEntry.documentId
+                });
+
                 return ctx.response.created(createdEntry);
             } catch (discourseError) {
                 console.error("Discourse operation failed:", discourseError.response?.data || discourseError.message);
@@ -503,7 +522,6 @@ Join the conversation at the following link: ${process.env.DISCOURSE_URL}/t/${we
                         }
                     }
                 );
-                console.log(virtual_cafe_group_info.data)
                 if (virtual_cafe_response.status === 200 && virtual_cafe_group_info.status === 200){
                     for (const group of virtual_cafe_group_info.data.groups){
                         if (group.id === entry.discourse_group_id){
@@ -526,6 +544,13 @@ Join the conversation at the following link: ${process.env.DISCOURSE_URL}/t/${we
                         });
                         console.log('User added to interested_users relation');
 
+                        // Notify the seller about the new interest
+                        try {
+                            await strapi.service('api::notification.notification').dispatchInterestNotification(item_id, user_id);
+                        } catch (notifyError) {
+                            strapi.log.error('Failed to dispatch interest notification', notifyError);
+                        }
+
                          // Create a post in the topic to welcome new members
                          console.log("Entry for post payload:", entry);
                         const post_payload = {
@@ -538,7 +563,6 @@ Join the conversation at the following link: ${process.env.DISCOURSE_URL}/t/${we
                                 'Api-Username': 'system'
                             }
                         });
-                        console.log(post_payload)
                     } catch (error) {
                         console.log("Error adding user to interested_users relation: " + error);
                         return ctx.internalServerError('Error adding user to interested_users relation');
@@ -659,9 +683,10 @@ Join the conversation at the following link: ${process.env.DISCOURSE_URL}/t/${we
     async removeItem(ctx, next){
         const { item_id } = ctx.request.body;
         try {
-            const entry = await strapi.db.query("api::item.item").findOne({
-                select: ['discourse_group_id', 'discourse_category_id'],
-                where: { documentId: item_id },
+            const entry = await strapi.documents("api::item.item").findOne({
+                documentId: item_id,
+                status: 'draft',
+                fields: ['discourse_group_id', 'discourse_category_id', 'discourse_news_topic_id'],
             });
             
             if (entry) {
@@ -694,7 +719,7 @@ Join the conversation at the following link: ${process.env.DISCOURSE_URL}/t/${we
                         const topics = topicsResponse.data.topic_list.topics;
                         for (const topic of topics) {
                             try {
-                                await axios.delete(`${process.env.DISCOURSE_URL}/t/${topic.id}.json`, {
+                                await axios.delete(`${process.env.DISCOURSE_URL}/t/${topic.id}`, {
                                     headers: {
                                         'Api-Key': process.env.DISCOURSE_API_TOKEN,
                                         'Api-Username': 'system'
@@ -720,6 +745,20 @@ Join the conversation at the following link: ${process.env.DISCOURSE_URL}/t/${we
                 await strapi.documents("api::item.item").delete({
                     documentId: item_id
                 });
+
+                // Delete announcement topic in category 101
+                if (entry.discourse_news_topic_id) {
+                    try {
+                        await axios.delete(`${process.env.DISCOURSE_URL}/t/${entry.discourse_news_topic_id}.json`, {
+                            headers: {
+                                'Api-Key': process.env.DISCOURSE_API_TOKEN,
+                                'Api-Username': 'system'
+                            }
+                        });
+                    } catch (error) {
+                        console.log("Error deleting announcement topic: " + error);
+                    }
+                }
                 
                 return ctx.send({ message: 'Item and associated Discourse group/category deleted successfully' });
             } else {
@@ -760,6 +799,8 @@ Join the conversation at the following link: ${process.env.DISCOURSE_URL}/t/${we
                 pedagogical_objectives: data.pedagogical_objectives || null,
                 level_of_study: data.level_of_study || null,
                 coverId: cover || null,
+                notify_on_interest: data.notify_on_interest !== undefined ? Boolean(data.notify_on_interest) : true,
+                notify_on_interest_email: data.notify_on_interest_email !== undefined ? Boolean(data.notify_on_interest_email) : false,
             };
 
             // Handle university relation

@@ -155,5 +155,61 @@ text: `Your OTP password to access NEOLink is: ${random_string}\n\nThis code exp
             console.log(error);
             console.log('notification email not sent');
         }
+    },
+    async send_interest_email({ to, itemName, itemUrl, interestedUserName }) {
+        try {
+            await sendMessage({
+                from: process.env.USER_MAIL,
+                to,
+                subject: `NEOLink: ${interestedUserName} is interested in "${itemName}"`,
+                html: `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #fafafa;">
+    <table role="presentation" style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td align="center" style="padding: 40px 20px;">
+                <table role="presentation" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <tr>
+                        <td style="padding: 30px 40px; border-bottom: 1px solid #e9ecef;">
+                            <div style="text-align: center;">
+                                <img src="https://neolink.neolaiacampus.eu/logo.png" alt="NEOLink Logo" style="max-width: 200px; height: auto; display: block; margin: 0 auto;" />
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 30px 40px;">
+                            <h2 style="margin: 0 0 16px; font-size: 22px; font-weight: 600; color: #213547;">New interest in your item</h2>
+                            <p style="margin: 0 0 20px; font-size: 16px; line-height: 1.6; color: #495057;">
+                                <strong style="color: #7c6fd6;">${interestedUserName}</strong> has just expressed interest in your item on NEOLink:
+                            </p>
+                            <div style="background: linear-gradient(135deg, #f8f7ff 0%, #f0eeff 100%); border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
+                                <p style="margin: 0; font-size: 18px; font-weight: 600; color: #213547;">${itemName}</p>
+                            </div>
+                            <a href="${itemUrl}" style="display: inline-block; margin-top: 1rem; background-color: #7c6fd6; color: white; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; font-weight: 600;">View item</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 20px 40px; background-color: #f8f9fa; border-top: 1px solid #e9ecef; border-radius: 0 0 12px 12px;">
+                            <p style="margin: 0; font-size: 0.8rem; color: #6c757d;">You are receiving this email because you opted in to interest notifications for this item on NEOLink.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+`,
+                text: `${interestedUserName} has expressed interest in your item "${itemName}" on NEOLink.\nLink: ${itemUrl}`
+            });
+        } catch (error) {
+            console.log(error);
+            console.log('interest email not sent');
+        }
     }
 }

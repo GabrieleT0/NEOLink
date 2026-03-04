@@ -37,6 +37,8 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
         second_level_structure: initialData?.second_level_structure || '',
         offered_by: initialData?.offered_by || '',
         cover: initialData?.cover || null,
+        notify_on_interest: initialData?.notify_on_interest !== undefined ? initialData.notify_on_interest : true,
+        notify_on_interest_email: initialData?.notify_on_interest_email !== undefined ? initialData.notify_on_interest_email : false,
     });
 
     // Get category name for field visibility checks
@@ -1004,14 +1006,18 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                                 {shouldShowField('level_of_study', categoryName) && (
                                     <div style={{ marginBottom: '1.5rem' }}>
                                         <label style={labelStyle}>Level of Study</label>
-                                        <input
-                                            type="text"
+                                        <select
                                             name="level_of_study"
                                             value={formData.level_of_study}
                                             onChange={handleInputChange}
-                                            style={inputStyle}
-                                            placeholder="e.g., Undergraduate, Graduate"
-                                        />
+                                            style={{ ...inputStyle, cursor: 'pointer' }}
+                                        >
+                                            <option value="">Select level of study</option>
+                                            <option value="PhD">PhD</option>
+                                            <option value="Master degree">Master degree</option>
+                                            <option value="Bachelor degree">Bachelor degree</option>
+                                            <option value="Undergraduate students">Undergraduate students</option>
+                                        </select>
                                     </div>
                                 )}
 
@@ -1526,6 +1532,44 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                                 )}
                             </div>
                         )}
+
+                        {/* Notification Preferences */}
+                        <div style={{
+                            marginTop: '2rem',
+                            padding: '1.25rem 1.5rem',
+                            backgroundColor: '#f8f7ff',
+                            borderRadius: '10px',
+                            border: '1px solid #e0daf7'
+                        }}>
+                            <p style={{ margin: '0 0 1rem', fontWeight: '600', color: '#213547', fontSize: '0.95rem' }}>
+                                🔔 Notification preferences
+                            </p>
+                            <p style={{ margin: '0 0 1rem', fontSize: '0.85rem', color: '#6c757d', lineHeight: '1.5' }}>
+                                Choose how you want to be notified when someone expresses interest in this item.
+                            </p>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem', cursor: 'pointer' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={formData.notify_on_interest}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, notify_on_interest: e.target.checked }))}
+                                    style={{ width: '17px', height: '17px', accentColor: '#7c6fd6', cursor: 'pointer' }}
+                                />
+                                <span style={{ fontSize: '0.92rem', color: '#495057' }}>
+                                    Receive a <strong>platform notification</strong> when someone is interested
+                                </span>
+                            </label>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={formData.notify_on_interest_email}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, notify_on_interest_email: e.target.checked }))}
+                                    style={{ width: '17px', height: '17px', accentColor: '#7c6fd6', cursor: 'pointer' }}
+                                />
+                                <span style={{ fontSize: '0.92rem', color: '#495057' }}>
+                                    Receive an <strong>email notification</strong> when someone is interested
+                                </span>
+                            </label>
+                        </div>
 
                         {/* Navigation Buttons */}
                         <div style={{ 
