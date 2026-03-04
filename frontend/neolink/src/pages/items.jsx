@@ -25,6 +25,7 @@ function ItemsList() {
         erc_panel: '',
         erc_keyword: '',
         languages: '',
+        level_of_study: '',
         start_date_from: '',
         start_date_to: '',
         end_date_from: '',
@@ -66,6 +67,8 @@ function ItemsList() {
                 return `Status: ${value}`;
             case 'languages':
                 return `Language: ${value}`;
+            case 'level_of_study':
+                return `Level of study: ${value}`;
             case 'erc_area':
                 return `ERC area: ${value}`;
             case 'erc_panel':
@@ -232,6 +235,11 @@ function ItemsList() {
                 queryParams.append('filters[languages][$containsi]', filters.languages);
             }
 
+            // Level of study filter
+            if (filters.level_of_study) {
+                queryParams.append('filters[level_of_study][$eq]', filters.level_of_study);
+            }
+
             // Date filters
             if (filters.start_date_from) {
                 queryParams.append('filters[start_date][$gte]', filters.start_date_from);
@@ -281,6 +289,7 @@ function ItemsList() {
             erc_panel: '',
             erc_keyword: '',
             languages: '',
+            level_of_study: '',
             start_date_from: '',
             start_date_to: '',
             end_date_from: '',
@@ -293,7 +302,7 @@ function ItemsList() {
     const hasActiveFilters = () => {
         return filters.search || filters.category_id || filters.university || 
                filters.item_status || filters.erc_area || filters.erc_panel || 
-               filters.erc_keyword || filters.languages || filters.start_date_from || 
+               filters.erc_keyword || filters.languages || filters.level_of_study || filters.start_date_from || 
                filters.start_date_to || filters.end_date_from || filters.end_date_to ||
                filters.expiration_from || filters.expiration_to;
     };
@@ -648,7 +657,8 @@ function ItemsList() {
                                     borderRadius: '8px',
                                     border: '1px solid #dee2e6',
                                     backgroundColor: 'white',
-                                    cursor: 'pointer'
+                                    cursor: 'pointer',
+                                    color: '#495057',
                                 }}
                                 disabled={subscriptionSubmitting}
                             >
