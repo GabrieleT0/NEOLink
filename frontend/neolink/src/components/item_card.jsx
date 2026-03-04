@@ -210,6 +210,15 @@ function ItemCard({ item }) {
                             </span>
                         </div>
                     )}
+
+                    {item.interested_count > 0 && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{ color: '#7c6fd6' }}>💡</span>
+                            <span style={{ color: '#7c6fd6', fontWeight: '600' }}>
+                                {item.interested_count} {item.interested_count === 1 ? 'person' : 'people'} interested
+                            </span>
+                        </div>
+                    )}
                 </div>
 
                 {/* View Details Button */}

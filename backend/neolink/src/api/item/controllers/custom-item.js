@@ -535,7 +535,8 @@ Join the conversation at the following link: ${process.env.DISCOURSE_URL}/t/${we
                             data: {
                                 interested_users: {
                                     connect: [{ documentId: user_id }]
-                                }
+                                },
+                                interested_count: (entry.interested_users?.length || 0) + 1
                             }
                         });
 
@@ -656,7 +657,8 @@ Join the conversation at the following link: ${process.env.DISCOURSE_URL}/t/${we
                             data: {
                                 interested_users: {
                                     disconnect: [{ documentId: user_id }]
-                                }
+                                },
+                                interested_count: Math.max(0, (entry.interested_users?.length || 1) - 1)
                             }
                         });
 

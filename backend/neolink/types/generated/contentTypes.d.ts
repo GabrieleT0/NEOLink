@@ -736,6 +736,7 @@ export interface ApiItemItem extends Struct.CollectionTypeSchema {
     >;
     first_topic_id: Schema.Attribute.Integer;
     group_name: Schema.Attribute.String;
+    interested_count: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
     interested_users: Schema.Attribute.Relation<
       'manyToMany',
       'api::seller.seller'

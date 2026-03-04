@@ -153,6 +153,10 @@
     },
     "discourse_news_topic_id": {
       "type": "integer"
+    },
+    "interested_count": {
+      "type": "integer",
+      "default": 0
     }
   }
 }
