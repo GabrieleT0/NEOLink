@@ -88,7 +88,7 @@ function Navbar({ token }) {
         ...(token ? [
             { path: "/create-item", label: "Create Item", icon: "➕" },
             { path: "/my-items", label: "My Items", icon: "📋" },
-            // { path: "/notifications", label: "Notifications", icon: "🔔" }
+            { path: "/notifications", label: "Notifications", icon: "🔔" }
         ] : [])
     ];
 
@@ -121,13 +121,16 @@ function Navbar({ token }) {
     };
 
     return (
+        <>
         <nav style={{
-            padding: '1.1rem 0',
+            padding: '0.65rem 0',
             borderBottom: '1px solid #e8eef3',
             backgroundColor: 'white',
             width: '100%',
-            position: 'sticky',
+            position: 'fixed',
             top: 0,
+            left: 0,
+            right: 0,
             zIndex: 1000,
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)'
         }}>
@@ -143,7 +146,7 @@ function Navbar({ token }) {
                     }
                 }
 
-                @media (max-width: 1024px) {
+                @media (max-width: 768px) {
                     .nav-desktop-links {
                         display: none !important;
                     }
@@ -155,7 +158,7 @@ function Navbar({ token }) {
                     }
                 }
 
-                @media (min-width: 1025px) {
+                @media (min-width: 769px) {
                     .nav-desktop-links {
                         display: flex !important;
                     }
@@ -180,10 +183,10 @@ function Navbar({ token }) {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                padding: '0 3rem',
+                padding: '0 1rem',
                 width: '100%',
                 boxSizing: 'border-box',
-                gap: '2rem'
+                gap: '0.75rem'
             }}>
                 {/* Logo Section */}
                 <div style={{ 
@@ -196,11 +199,12 @@ function Navbar({ token }) {
                         src={logo_neolaia} 
                         alt='Logo NEOLAiA' 
                         style={{ 
-                            maxHeight: '45px',
+                            maxHeight: '34px',
                             width: 'auto',
                             height: 'auto', 
                             cursor: 'pointer',
-                            transition: 'transform 0.2s'
+                            transition: 'transform 0.2s',
+                            marginRight: '0.5rem'
                         }}
                         onClick={() => navigate('/')}
                         onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
@@ -212,30 +216,31 @@ function Navbar({ token }) {
                 <div className="nav-desktop-links" style={{
                     display: 'none',
                     alignItems: 'center',
-                    gap: '0.5rem',
+                    gap: '0.25rem',
                     flex: '1 1 auto',
                     justifyContent: 'flex-start',
-                    flexWrap: 'wrap',
-                    padding: '0 1rem'
+                    flexWrap: 'nowrap',
+                    overflow: 'hidden',
                 }}>
                     {navItems.map(item => (
                         <button
                             key={item.path}
                             onClick={() => navigate(item.path)}
                             style={{
-                                padding: '0.5rem 0.875rem',
+                                padding: '0.35rem 0.6rem',
                                 backgroundColor: isActive(item.path) ? '#f0f0ff' : 'transparent',
                                 color: isActive(item.path) ? '#7c6fd6' : '#495057',
                                 border: isActive(item.path) ? '2px solid #7c6fd6' : '2px solid transparent',
                                 borderRadius: '8px',
-                                fontSize: '0.9rem',
+                                fontSize: '0.82rem',
                                 fontWeight: isActive(item.path) ? '600' : '500',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '0.5rem',
-                                whiteSpace: 'nowrap'
+                                gap: '0.35rem',
+                                whiteSpace: 'nowrap',
+                                flexShrink: 0
                             }}
                             onMouseEnter={(e) => {
                                 if (!isActive(item.path)) {
@@ -251,7 +256,7 @@ function Navbar({ token }) {
                             }}
                         >
                             <span>{item.icon}</span>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                                 {item.label}
                                 {renderBadge(item.path)}
                             </span>
@@ -270,7 +275,7 @@ function Navbar({ token }) {
                     <div className="nav-desktop-user" style={{
                         display: 'none',
                         alignItems: 'center',
-                        gap: '1rem'
+                        gap: '0.5rem'
                     }}>
                         {token && userData ? (
                             <>
@@ -278,10 +283,10 @@ function Navbar({ token }) {
                                     display: 'flex',
                                     flexDirection: 'column',
                                     alignItems: 'flex-end',
-                                    maxWidth: '200px'
+                                    maxWidth: '140px'
                                 }}>
                                     <span style={{
-                                        fontSize: '0.85rem',
+                                        fontSize: '0.78rem',
                                         fontWeight: '600',
                                         color: '#213547',
                                         whiteSpace: 'nowrap',
@@ -289,10 +294,10 @@ function Navbar({ token }) {
                                         textOverflow: 'ellipsis',
                                         maxWidth: '100%'
                                     }}>
-                                        {userData.full_name || userData.email}
+                                        {userData.full_name || userData.email?.split('@')[0]}
                                     </span>
                                     <span style={{
-                                        fontSize: '0.7rem',
+                                        fontSize: '0.65rem',
                                         color: '#6c757d',
                                         whiteSpace: 'nowrap',
                                         overflow: 'hidden',
@@ -305,16 +310,17 @@ function Navbar({ token }) {
                                 <button
                                     onClick={handleLogout}
                                     style={{
-                                        padding: '0.5rem 0.875rem',
+                                        padding: '0.35rem 0.6rem',
                                         backgroundColor: 'transparent',
                                         color: '#dc3545',
-                                        border: '2px solid #dc3545',
+                                        border: '1.5px solid #dc3545',
                                         borderRadius: '8px',
-                                        fontSize: '0.85rem',
+                                        fontSize: '0.78rem',
                                         fontWeight: '600',
                                         cursor: 'pointer',
                                         transition: 'all 0.2s',
-                                        whiteSpace: 'nowrap'
+                                        whiteSpace: 'nowrap',
+                                        flexShrink: 0
                                     }}
                                     onMouseEnter={(e) => {
                                         e.target.style.backgroundColor = '#dc3545';
@@ -333,12 +339,12 @@ function Navbar({ token }) {
                                 <button
                                     onClick={() => navigate('/login')}
                                     style={{
-                                        padding: '0.5rem 0.875rem',
+                                        padding: '0.35rem 0.6rem',
                                         backgroundColor: 'transparent',
                                         color: '#7c6fd6',
-                                        border: '2px solid #7c6fd6',
+                                        border: '1.5px solid #7c6fd6',
                                         borderRadius: '8px',
-                                        fontSize: '0.85rem',
+                                        fontSize: '0.78rem',
                                         fontWeight: '600',
                                         cursor: 'pointer',
                                         transition: 'all 0.2s',
@@ -358,12 +364,12 @@ function Navbar({ token }) {
                                 <button
                                     onClick={() => navigate('/register')}
                                     style={{
-                                        padding: '0.5rem 0.875rem',
+                                        padding: '0.35rem 0.6rem',
                                         background: 'linear-gradient(135deg, #7c6fd6 0%, #8b7ad6 100%)',
                                         color: 'white',
                                         border: 'none',
                                         borderRadius: '8px',
-                                        fontSize: '0.85rem',
+                                        fontSize: '0.78rem',
                                         fontWeight: '600',
                                         cursor: 'pointer',
                                         transition: 'all 0.2s',
@@ -413,9 +419,10 @@ function Navbar({ token }) {
                         src={eu_logo} 
                         alt='Logo EU' 
                         style={{ 
-                            maxHeight: '40px',
+                            maxHeight: '26px',
                             width: 'auto',
-                            height: 'auto'
+                            height: 'auto',
+                            flexShrink: 0
                         }}
                     />
                 </div>
@@ -580,6 +587,9 @@ function Navbar({ token }) {
                 </div>
             )}
         </nav>
+        {/* Spacer so fixed navbar doesn't overlap page content */}
+        <div style={{ height: '62px' }} />
+        </>
     );
 }
 
