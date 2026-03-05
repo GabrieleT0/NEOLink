@@ -200,6 +200,18 @@ const PrivacyPolicy = () => {
                             </a>
                             , a common standard for research and higher education.
                         </p>
+                        <p>
+                            This privacy statement applies to the service identified by the following SAML entityID:
+                        </p>
+                        <p style={{ 
+                            fontFamily: 'monospace', 
+                            backgroundColor: '#f8f9fa', 
+                            padding: '0.5rem 1rem', 
+                            borderRadius: '6px',
+                            wordBreak: 'break-all'
+                        }}>
+                            https://neolink.neolaiacampus.eu/shibboleth
+                        </p>
                     </Section>
                 </div>
 
