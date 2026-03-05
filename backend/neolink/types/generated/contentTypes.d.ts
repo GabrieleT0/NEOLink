@@ -712,6 +712,7 @@ export interface ApiItemItem extends Struct.CollectionTypeSchema {
     description: Schema.Attribute.Text;
     discourse_category_id: Schema.Attribute.Integer;
     discourse_group_id: Schema.Attribute.Integer;
+    discourse_news_topic_id: Schema.Attribute.Integer;
     end_date: Schema.Attribute.Date;
     erc_area: Schema.Attribute.Enumeration<
       [
@@ -735,6 +736,7 @@ export interface ApiItemItem extends Struct.CollectionTypeSchema {
     >;
     first_topic_id: Schema.Attribute.Integer;
     group_name: Schema.Attribute.String;
+    interested_count: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
     interested_users: Schema.Attribute.Relation<
       'manyToMany',
       'api::seller.seller'
@@ -768,6 +770,10 @@ export interface ApiItemItem extends Struct.CollectionTypeSchema {
       'oneToMany',
       'api::notification.notification'
     >;
+    notify_on_interest: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<true>;
+    notify_on_interest_email: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
     pedagogical_objectives: Schema.Attribute.Text;
     publishedAt: Schema.Attribute.DateTime;
     second_level_structure: Schema.Attribute.Relation<

@@ -689,18 +689,35 @@ function ItemDetail() {
                         flexWrap: 'wrap',
                         gap: '1rem'
                     }}>
-                        <span style={{
-                            display: 'inline-block',
-                            padding: '0.5rem 1rem',
-                            backgroundColor: getStatusColor(item.item_status),
-                            color: 'white',
-                            borderRadius: '20px',
-                            fontSize: '0.875rem',
-                            fontWeight: '600',
-                            textTransform: 'uppercase'
-                        }}>
-                            {item.item_status}
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                            <span style={{
+                                display: 'inline-block',
+                                padding: '0.5rem 1rem',
+                                backgroundColor: getStatusColor(item.item_status),
+                                color: 'white',
+                                borderRadius: '20px',
+                                fontSize: '0.875rem',
+                                fontWeight: '600',
+                                textTransform: 'uppercase'
+                            }}>
+                                {item.item_status}
+                            </span>
+                            {(item.interested_count > 0 || (item.interested_users && item.interested_users.length > 0)) && (
+                                <span style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.4rem',
+                                    padding: '0.5rem 1rem',
+                                    backgroundColor: '#f0edff',
+                                    color: '#7c6fd6',
+                                    borderRadius: '20px',
+                                    fontSize: '0.875rem',
+                                    fontWeight: '600'
+                                }}>
+                                    💡 {item.interested_count ?? item.interested_users?.length ?? 0} {(item.interested_count ?? item.interested_users?.length ?? 0) === 1 ? 'person' : 'people'} interested
+                                </span>
+                            )}
+                        </div>
 
                         {/* Action Buttons - Show different buttons based on ownership */}
                         {token && userData && item.seller && (

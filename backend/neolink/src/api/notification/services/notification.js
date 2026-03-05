@@ -12,6 +12,8 @@ const formatCriteriaKey = (key) => {
         erc_panel: 'ERC Panel',
         erc_keyword: 'ERC Keyword',
         start_date_from: 'Start date from',
+        level_of_study: 'Level of Study',
+        start_date_to: 'Start date to',
         start_date_to: 'Start date to',
         end_date_from: 'End date from',
         end_date_to: 'End date to',
@@ -83,6 +85,7 @@ const fieldComparators = {
     erc_panel: (item, expected) => matchDocumentRelation(item.erc_panel, expected),
     erc_keyword: (item, expected) => matchDocumentRelation(item.erc_keyword, expected),
     item_status: (item, expected) => item.item_status === expected,
+    level_of_study: (item, expected) => item.level_of_study === expected,
     erc_area: (item, expected) => item.erc_area === expected,
     search: (item, expected) => {
         if (!expected) {
@@ -312,5 +315,69 @@ module.exports = createCoreService('api::notification.notification', ({ strapi }
         }
 
         return createdNotification;
+    },
+
+    async dispatchInterestNotification(itemDocumentId, interestedSellerDocumentId) {
+        if (!itemDocumentId || !interestedSellerDocumentId) {
+            return;
+        }
+
+        const item = await strapi.documents('api::item.item').findOne({
+            documentId: itemDocumentId,
+            populate: {
+                seller: true
+            }
+        });
+
+        if (!item || !item.seller?.documentId) {
+            return;
+        }
+
+        // Do not notify the seller if they are the one expressing interest
+        if (item.seller.documentId === interestedSellerDocumentId) {
+            return;
+        }
+
+        const interestedSeller = await strapi.documents('api::seller.seller').findOne({
+            documentId: interestedSellerDocumentId,
+            fields: ['full_name', 'email']
+        });
+
+        const interestedUserName = interestedSeller?.full_name || 'A user';
+        const now = new Date().toISOString();
+
+        if (item.notify_on_interest) {
+            try {
+                await strapi.entityService.create('api::notification.notification', {
+                    data: {
+                        title: item.name,
+                        body: `${interestedUserName} has expressed interest in your item "${item.name}".`,
+                        delivered_at: now,
+                        seller: {
+                            connect: [{ documentId: item.seller.documentId }]
+                        },
+                        item: {
+                            connect: [{ documentId: itemDocumentId }]
+                        }
+                    }
+                });
+            } catch (error) {
+                strapi.log.error('Failed to create interest notification', error);
+            }
+        }
+
+        if (item.notify_on_interest_email && item.seller.email) {
+            try {
+                const itemUrl = `${process.env.FRONTEND_URL || ''}items/${itemDocumentId}`;
+                await strapi.config.email_sender.send_interest_email({
+                    to: item.seller.email,
+                    itemName: item.name,
+                    itemUrl,
+                    interestedUserName
+                });
+            } catch (error) {
+                strapi.log.error('Failed to send interest notification email', error);
+            }
+        }
     }
 }));

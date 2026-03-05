@@ -124,6 +124,9 @@ function ItemsFilter({ filters, onFilterChange, onClearFilters, onSubscribeReque
             if (!shouldShowField('languages', categoryName)) {
                 newFilters.languages = '';
             }
+            if (!shouldShowField('level_of_study', categoryName)) {
+                newFilters.level_of_study = '';
+            }
             if (!shouldShowField('start_date', categoryName)) {
                 newFilters.start_date_from = '';
                 newFilters.start_date_to = '';
@@ -295,7 +298,7 @@ function ItemsFilter({ filters, onFilterChange, onClearFilters, onSubscribeReque
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '0.35rem',
-                                display: 'none'
+                                display: 'inline-flex'
                             }}
                             title={!canSubscribe ? 'Login to save alerts' : 'Get notified when new items match these filters'}
                         >
@@ -680,19 +683,37 @@ function ItemsFilter({ filters, onFilterChange, onClearFilters, onSubscribeReque
                 )}
 
                 {/* Content Details Section */}
-                {(!selectedCategoryName || shouldShowField('languages', selectedCategoryName)) && (
+                {(!selectedCategoryName || shouldShowField('languages', selectedCategoryName) || shouldShowField('level_of_study', selectedCategoryName)) && (
                     <>
                         <div style={sectionHeaderStyle}>Content Details</div>
-                        <div>
-                            <label style={labelStyle}>Languages</label>
-                            <input
-                                type="text"
-                                value={filters.languages || ''}
-                                onChange={(e) => handleChange('languages', e.target.value)}
-                                placeholder="e.g., English, Spanish"
-                                style={inputStyle}
-                            />
-                        </div>
+                        {(!selectedCategoryName || shouldShowField('languages', selectedCategoryName)) && (
+                            <div>
+                                <label style={labelStyle}>Languages</label>
+                                <input
+                                    type="text"
+                                    value={filters.languages || ''}
+                                    onChange={(e) => handleChange('languages', e.target.value)}
+                                    placeholder="e.g., English, Spanish"
+                                    style={inputStyle}
+                                />
+                            </div>
+                        )}
+                        {(!selectedCategoryName || shouldShowField('level_of_study', selectedCategoryName)) && (
+                            <div>
+                                <label style={labelStyle}>Level of Study</label>
+                                <select
+                                    value={filters.level_of_study || ''}
+                                    onChange={(e) => handleChange('level_of_study', e.target.value)}
+                                    style={{ ...inputStyle, cursor: 'pointer' }}
+                                >
+                                    <option value="">All levels</option>
+                                    <option value="PhD">PhD</option>
+                                    <option value="Master degree">Master degree</option>
+                                    <option value="Bachelor degree">Bachelor degree</option>
+                                    <option value="Undergraduate students">Undergraduate students</option>
+                                </select>
+                            </div>
+                        )}
                     </>
                 )}
             </div>
