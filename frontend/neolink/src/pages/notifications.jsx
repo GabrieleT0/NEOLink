@@ -1,8 +1,10 @@
 import { useContext, useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import Navbar from "../components/navbar";
 import { AuthContext } from "../components/AuthContext.jsx";
 import { notificationsApi } from "../services/notifications";
+import { base_url } from "../api";
 
 const TAB_IDS = {
     NOTIFICATIONS: 'notifications',
@@ -40,14 +42,14 @@ const CRITERIA_LABELS = {
     expiration_to: 'Expiration to',
 };
 
-const formatCriteria = (criteria = {}) => {
+const formatCriteria = (criteria = {}, resolveValue = (_, value) => value) => {
     const entries = Object.entries(criteria).filter(([, value]) => Boolean(value));
     if (entries.length === 0) {
         return ['Any new item'];
     }
     return entries.map(([key, value]) => {
         const label = CRITERIA_LABELS[key] || key.replace(/_/g, ' ');
-        return `${label}: ${value}`;
+        return `${label}: ${resolveValue(key, value)}`;
     });
 };
 
@@ -65,6 +67,7 @@ function NotificationsPage() {
     const [subscriptionsLoading, setSubscriptionsLoading] = useState(true);
     const [subscriptionsError, setSubscriptionsError] = useState(null);
     const [subscriptionPendingId, setSubscriptionPendingId] = useState(null);
+    const [universitiesById, setUniversitiesById] = useState({});
 
     const [onlyUnread, setOnlyUnread] = useState(false);
     const [markingAll, setMarkingAll] = useState(false);
@@ -118,6 +121,34 @@ function NotificationsPage() {
             fetchSubscriptions();
         }
     }, [token, activeTab, fetchNotifications, fetchSubscriptions]);
+
+    useEffect(() => {
+        if (!token) {
+            return;
+        }
+
+        const loadUniversities = async () => {
+            try {
+                const response = await axios.get(`${base_url}/universities`);
+                const data = response.data?.data || response.data || [];
+                const nextMap = {};
+
+                data.forEach((uni) => {
+                    const id = uni.documentId || uni.id;
+                    const name = uni.attributes?.name || uni.university_name || uni.name;
+                    if (id && name) {
+                        nextMap[id] = name;
+                    }
+                });
+
+                setUniversitiesById(nextMap);
+            } catch (err) {
+                setUniversitiesById({});
+            }
+        };
+
+        loadUniversities();
+    }, [token]);
 
     const handleMarkRead = async (notificationId) => {
         try {
@@ -291,7 +322,15 @@ function NotificationsPage() {
     };
 
     const renderSubscriptionCard = (subscription) => {
-        const chips = formatCriteria(subscription.criteria_resolved || subscription.criteria || {});
+        const chips = formatCriteria(
+            subscription.criteria_resolved || subscription.criteria || {},
+            (key, value) => {
+                if (key === 'university') {
+                    return universitiesById[value] || value;
+                }
+                return value;
+            }
+        );
         const isPaused = !subscription.is_active;
         const isPending = subscriptionPendingId === subscription.documentId;
 
