@@ -202,7 +202,7 @@ function CreateItemFormStep2({ token, initialData, onBack, onSubmit }) {
                         color: '#6c757d',
                         fontSize: '0.95rem'
                     }}>
-                        Interaction with users who show interest in your item will take place on the <a href="https://virtualcafe.neolaiacampus.eu/" target="_blank" rel="noopener noreferrer">Virtual Café</a>. You can customize certain aspects, such as the name of the private group that will be created and if you want to make it public on the Virtual Cafè.
+                        Interaction with users who show interest in your item will take place on the <a href="https://virtualcafe.neolaiacampus.eu/" target="_blank" rel="noopener noreferrer">Virtual Café</a>. You can customize certain aspects, such as the name of the private group and the description.
                     </p>
 
                     <form onSubmit={handleSubmit}>
@@ -249,13 +249,13 @@ function CreateItemFormStep2({ token, initialData, onBack, onSubmit }) {
                                     onChange={handleInputChange}
                                     placeholder="Enter the name users will see"
                                     required
-                                    maxLength={40}
+                                    maxLength={20}
                                     style={inputStyle}
                                     onFocus={(e) => e.target.style.borderColor = '#7c6fd6'}
                                     onBlur={(e) => e.target.style.borderColor = '#dee2e6'}
                                 />
                                 <small style={{ color: '#6c757d', fontSize: '0.8rem', marginTop: '0.25rem', display: 'block' }}>
-                                    This is the friendly name displayed to users (max 40 characters: {formData.group_display_name.length}/40)
+                                    This is the friendly name displayed to users (max 20 characters: {formData.group_display_name.length}/20)
                                 </small>
                             </div>
 
