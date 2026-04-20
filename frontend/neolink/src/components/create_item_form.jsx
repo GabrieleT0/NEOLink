@@ -11,6 +11,8 @@ const logo_neolink = `${import.meta.env.BASE_URL}logo.png`;
 const eu_logo = `${import.meta.env.BASE_URL}eu_logo.png`;
 
 function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }) {
+    const formRef = useRef(null);
+    const fieldRefs = useRef({});
     const [userData, setUserData] = useState(null);
     const [formData, setFormData] = useState({
         item_status: initialData?.item_status || 'active',
@@ -59,6 +61,7 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [dateErrors, setDateErrors] = useState({});
+    const [fieldErrors, setFieldErrors] = useState({});
 
     // Language dropdown states
     const [languageSearch, setLanguageSearch] = useState('');
@@ -76,6 +79,19 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
         { value: 'running', label: 'Running' },
         { value: 'expired', label: 'Expired' }
     ];
+
+    const fieldLabels = {
+        item_status: `${categoryName} status`,
+        name: `${categoryName} name`,
+        offered_by: 'Inserted by',
+        start_date: 'Start date',
+        end_date: 'End date',
+        expiration: 'Expiration date',
+        languages: 'Language',
+        university: 'University',
+        first_level_structure: 'First level structure',
+        second_level_structure: 'Second level structure'
+    };
 
     // ERC Area options
     const ercAreaOptions = [
@@ -112,6 +128,73 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
         
         return errors;
     };
+
+    const getRequiredFields = () => {
+        const requiredFields = ['item_status', 'name', 'offered_by'];
+
+        if (shouldShowField('start_date', categoryName)) requiredFields.push('start_date');
+        if (shouldShowField('end_date', categoryName)) requiredFields.push('end_date');
+        if (shouldShowField('expiration', categoryName)) requiredFields.push('expiration');
+        if (shouldShowField('languages', categoryName)) requiredFields.push('languages');
+        if (shouldShowField('university', categoryName)) requiredFields.push('university');
+        if (shouldShowField('first_level_structure', categoryName)) requiredFields.push('first_level_structure');
+        const shouldRequireSecondLevel =
+            shouldShowField('second_level_structure', categoryName) &&
+            formData.first_level_structure &&
+            secondLevelStructures.length > 0;
+
+        if (shouldRequireSecondLevel) requiredFields.push('second_level_structure');
+
+        return requiredFields;
+    };
+
+    const clearFieldError = (fieldName) => {
+        setFieldErrors(prev => {
+            if (!prev[fieldName]) return prev;
+            const updated = { ...prev };
+            delete updated[fieldName];
+            return updated;
+        });
+    };
+
+    const validateForm = () => {
+        const validationErrors = {};
+        const requiredFields = getRequiredFields();
+
+        requiredFields.forEach(field => {
+            const value = formData[field];
+            const isEmpty = typeof value === 'string' ? value.trim() === '' : !value;
+            if (isEmpty) {
+                validationErrors[field] = `${fieldLabels[field] || field} is required.`;
+            }
+        });
+
+        if (Object.keys(dateErrors).length > 0) {
+            Object.entries(dateErrors).forEach(([field, message]) => {
+                validationErrors[field] = message;
+            });
+        }
+
+        return validationErrors;
+    };
+
+    const focusFirstInvalidField = (validationErrors) => {
+        const requiredOrder = getRequiredFields();
+        const errorFields = Object.keys(validationErrors);
+        const firstInvalidField = requiredOrder.find(field => errorFields.includes(field)) || errorFields[0];
+
+        if (!firstInvalidField) return;
+
+        const targetField = fieldRefs.current[firstInvalidField];
+        if (targetField) {
+            targetField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (typeof targetField.focus === 'function') {
+                targetField.focus();
+            }
+        }
+    };
+
+    const getFieldError = (fieldName) => fieldErrors[fieldName] || dateErrors[fieldName];
 
     // Click outside handler for language dropdown
     useEffect(() => {
@@ -419,9 +502,14 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
+        const normalizedValue = name === 'name' ? value.slice(0, 20) : value;
+        clearFieldError(name);
+        if (error) {
+            setError(null);
+        }
         setFormData(prev => ({
             ...prev,
-            [name]: value
+            [name]: normalizedValue
         }));
     };
 
@@ -434,12 +522,18 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        
-        // Check if there are any date validation errors
-        if (Object.keys(dateErrors).length > 0) {
-            setError("Please fix the date validation errors before proceeding.");
+
+        const validationErrors = validateForm();
+
+        if (Object.keys(validationErrors).length > 0) {
+            setFieldErrors(validationErrors);
+            setError("Please complete the highlighted fields before proceeding to the next step.");
+            focusFirstInvalidField(validationErrors);
             return;
         }
+
+        setFieldErrors({});
+        setError(null);
         
         // Pass form data to parent and move to step 3
         onNext(formData);
@@ -704,18 +798,22 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                         {getCategoryFieldDescription(categoryName)}
                     </p>
 
-                    <form onSubmit={handleSubmit}>
+                    <form ref={formRef} onSubmit={handleSubmit} noValidate>
                         {/* Item Status */}
                         <div style={{ marginBottom: '1.5rem' }}>
                             <label style={labelStyle}>
                                 {categoryName} Status <span style={{ color: '#dc3545' }}>*</span>
                             </label>
                             <select
+                                ref={(el) => { fieldRefs.current.item_status = el; }}
                                 name="item_status"
                                 value={formData.item_status}
                                 onChange={handleInputChange}
                                 required
-                                style={selectStyle}
+                                style={{
+                                    ...selectStyle,
+                                    borderColor: getFieldError('item_status') ? '#dc3545' : '#dee2e6'
+                                }}
                             >
                                 {itemStatusOptions.map(option => (
                                     <option key={option.value} value={option.value}>
@@ -723,6 +821,9 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                                     </option>
                                 ))}
                             </select>
+                            {getFieldError('item_status') && (
+                                <small style={errorTextStyle}>{getFieldError('item_status')}</small>
+                            )}
                         </div>
 
                         {/* Name - Always shown */}
@@ -731,14 +832,30 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                                 {categoryName} Name <span style={{ color: '#dc3545' }}>*</span>
                             </label>
                             <input
+                                ref={(el) => { fieldRefs.current.name = el; }}
                                 type="text"
                                 name="name"
                                 value={formData.name}
                                 onChange={handleInputChange}
                                 required
-                                style={inputStyle}
+                                maxLength={20}
+                                style={{
+                                    ...inputStyle,
+                                    borderColor: getFieldError('name') ? '#dc3545' : '#dee2e6'
+                                }}
                                 placeholder="Enter item name"
                             />
+                            {getFieldError('name') && (
+                                <small style={errorTextStyle}>{getFieldError('name')}</small>
+                            )}
+                            <small style={{
+                                display: 'block',
+                                marginTop: '0.25rem',
+                                fontSize: '0.85rem',
+                                color: '#6c757d'
+                            }}>
+                                Max 20 characters ({formData.name.length}/20)
+                            </small>
                         </div>
 
                         {/* Offered By - Always shown (Read-only) */}
@@ -747,6 +864,7 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                                 Inserted by <span style={{ color: '#dc3545' }}>*</span>
                             </label>
                             <input
+                                ref={(el) => { fieldRefs.current.offered_by = el; }}
                                 type="text"
                                 name="offered_by"
                                 value={formData.offered_by}
@@ -756,17 +874,21 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                                     ...inputStyle,
                                     backgroundColor: '#f8f9fa',
                                     cursor: 'not-allowed',
-                                    color: '#6c757d'
+                                    color: '#6c757d',
+                                    borderColor: getFieldError('offered_by') ? '#dc3545' : '#dee2e6'
                                 }}
                                 placeholder="Instructor/Professor name"
                             />
+                            {getFieldError('offered_by') && (
+                                <small style={errorTextStyle}>{getFieldError('offered_by')}</small>
+                            )}
                             <small style={{ 
                                 display: 'block',
                                 marginTop: '0.25rem',
                                 fontSize: '0.85rem',
                                 color: '#6c757d'
                             }}>
-                                Pre-filled from your profile (cannot be edited).
+                                Pre-filled from data provided by your University (cannot be edited).
                             </small>
                         </div>
 
@@ -800,13 +922,20 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                                                 Start Date <span style={{ color: '#dc3545' }}>*</span>
                                             </label>
                                             <input
+                                                ref={(el) => { fieldRefs.current.start_date = el; }}
                                                 type="date"
                                                 name="start_date"
                                                 value={formData.start_date}
                                                 onChange={handleInputChange}
-                                                style={inputStyle}
+                                                style={{
+                                                    ...inputStyle,
+                                                    borderColor: getFieldError('start_date') ? '#dc3545' : '#dee2e6'
+                                                }}
                                                 required
                                             />
+                                            {getFieldError('start_date') && (
+                                                <small style={errorTextStyle}>{getFieldError('start_date')}</small>
+                                            )}
                                         </div>
                                     )}
 
@@ -823,24 +952,20 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                                                 </div>
                                             </label>
                                             <input
+                                                ref={(el) => { fieldRefs.current.end_date = el; }}
                                                 type="date"
                                                 name="end_date"
                                                 value={formData.end_date}
                                                 onChange={handleInputChange}
                                                 style={{
                                                     ...inputStyle,
-                                                    borderColor: dateErrors.end_date ? '#dc3545' : '#dee2e6'
+                                                    borderColor: getFieldError('end_date') ? '#dc3545' : '#dee2e6'
                                                 }}
                                                 required
                                             />
-                                            {dateErrors.end_date && (
-                                                <small style={{ 
-                                                    display: 'block',
-                                                    marginTop: '0.25rem',
-                                                    fontSize: '0.85rem',
-                                                    color: '#dc3545'
-                                                }}>
-                                                    {dateErrors.end_date}
+                                            {getFieldError('end_date') && (
+                                                <small style={errorTextStyle}>
+                                                    {getFieldError('end_date')}
                                                 </small>
                                             )}
                                         </div>
@@ -860,24 +985,20 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                                             </div>
                                         </label>
                                         <input
+                                            ref={(el) => { fieldRefs.current.expiration = el; }}
                                             type="date"
                                             name="expiration"
                                             value={formData.expiration}
                                             onChange={handleInputChange}
                                             style={{
                                                 ...inputStyle,
-                                                borderColor: dateErrors.expiration ? '#dc3545' : '#dee2e6'
+                                                borderColor: getFieldError('expiration') ? '#dc3545' : '#dee2e6'
                                             }}
                                             required
                                         />
-                                        {dateErrors.expiration && (
-                                            <small style={{ 
-                                                display: 'block',
-                                                marginTop: '0.25rem',
-                                                fontSize: '0.85rem',
-                                                color: '#dc3545'
-                                            }}>
-                                                {dateErrors.expiration}
+                                        {getFieldError('expiration') && (
+                                            <small style={errorTextStyle}>
+                                                {getFieldError('expiration')}
                                             </small>
                                         )}
                                     </div>
@@ -1199,9 +1320,18 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                                         <div style={{ position: 'relative' }}>
                                             {/* Selected Value / Trigger */}
                                             <div
+                                                ref={(el) => { fieldRefs.current.languages = el; }}
+                                                tabIndex={0}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' || e.key === ' ') {
+                                                        e.preventDefault();
+                                                        setIsLanguageDropdownOpen(!isLanguageDropdownOpen);
+                                                    }
+                                                }}
                                                 onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
                                                 style={{
                                                     ...inputStyle,
+                                                    borderColor: getFieldError('languages') ? '#dc3545' : '#dee2e6',
                                                     cursor: 'pointer',
                                                     display: 'flex',
                                                     alignItems: 'center',
@@ -1288,6 +1418,10 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                                                                             ...prev,
                                                                             languages: lang.name
                                                                         }));
+                                                                        clearFieldError('languages');
+                                                                        if (error) {
+                                                                            setError(null);
+                                                                        }
                                                                         setIsLanguageDropdownOpen(false);
                                                                         setLanguageSearch('');
                                                                     }}
@@ -1338,6 +1472,9 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                                             required
                                             style={{ display: 'none' }}
                                         />
+                                        {getFieldError('languages') && (
+                                            <small style={errorTextStyle}>{getFieldError('languages')}</small>
+                                        )}
                                         
                                         <small style={{
                                             display: 'block',
@@ -1407,13 +1544,15 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                                             University <span style={{ color: '#dc3545' }}>*</span>
                                         </label>
                                         <select
+                                            ref={(el) => { fieldRefs.current.university = el; }}
                                             name="university"
                                             value={formData.university}
                                             onChange={handleInputChange}
                                             required
                                             style={{
                                                 ...selectStyle,
-                                                backgroundColor: '#f8f9fa'
+                                                backgroundColor: '#f8f9fa',
+                                                borderColor: getFieldError('university') ? '#dc3545' : '#dee2e6'
                                             }}
                                         >
                                             <option value="">Select university</option>
@@ -1423,13 +1562,16 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                                                 </option>
                                             ))}
                                         </select>
+                                        {getFieldError('university') && (
+                                            <small style={errorTextStyle}>{getFieldError('university')}</small>
+                                        )}
                                         <small style={{ 
                                             display: 'block',
                                             marginTop: '0.25rem',
                                             fontSize: '0.85rem',
                                             color: '#6c757d'
                                         }}>
-                                            Pre-filled from your profile
+                                            Pre-filled with data from the <a href="https://data.neolaiacampus.eu/research-hub" target="_blank" rel="noopener noreferrer">Open Research Hub</a>, if available.
                                         </small>
                                     </div>
                                 )}
@@ -1438,6 +1580,7 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                                     <div style={{ marginBottom: '1.5rem' }}>
                                         <label style={labelStyle}>First Level Structure <span style={{ color: '#dc3545' }}>*</span></label>
                                         <select
+                                            ref={(el) => { fieldRefs.current.first_level_structure = el; }}
                                             name="first_level_structure"
                                             value={formData.first_level_structure}
                                             onChange={handleInputChange}
@@ -1445,7 +1588,8 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                                                 ...selectStyle,
                                                 backgroundColor: '#f8f9fa',
                                                 cursor: !formData.university ? 'not-allowed' : 'pointer',
-                                                opacity: !formData.university ? 0.6 : 1
+                                                opacity: !formData.university ? 0.6 : 1,
+                                                borderColor: getFieldError('first_level_structure') ? '#dc3545' : '#dee2e6'
                                             }}
                                             disabled={!formData.university}
                                             required
@@ -1459,6 +1603,9 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                                                 </option>
                                             ))}
                                         </select>
+                                        {getFieldError('first_level_structure') && (
+                                            <small style={errorTextStyle}>{getFieldError('first_level_structure')}</small>
+                                        )}
                                         <small style={{ 
                                             display: 'block',
                                             marginTop: '0.25rem',
@@ -1474,6 +1621,7 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                                     <div style={{ marginBottom: '1.5rem' }}>
                                         <label style={labelStyle}>Second Level Structure <span style={{ color: '#dc3545' }}>*</span></label>
                                         <select
+                                            ref={(el) => { fieldRefs.current.second_level_structure = el; }}
                                             name="second_level_structure"
                                             value={formData.second_level_structure}
                                             onChange={handleInputChange}
@@ -1481,7 +1629,8 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                                                 ...selectStyle,
                                                 backgroundColor: '#f8f9fa',
                                                 cursor: !formData.first_level_structure ? 'not-allowed' : 'pointer',
-                                                opacity: !formData.first_level_structure ? 0.6 : 1
+                                                opacity: !formData.first_level_structure ? 0.6 : 1,
+                                                borderColor: getFieldError('second_level_structure') ? '#dc3545' : '#dee2e6'
                                             }}
                                             disabled={!formData.first_level_structure || secondLevelStructures.length === 0}
                                             required 
@@ -1495,6 +1644,9 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                                                 </option>
                                             ))}
                                         </select>
+                                        {getFieldError('second_level_structure') && (
+                                            <small style={errorTextStyle}>{getFieldError('second_level_structure')}</small>
+                                        )}
                                         <small style={{ 
                                             display: 'block',
                                             marginTop: '0.25rem',
@@ -1664,6 +1816,13 @@ const textareaStyle = {
 const selectStyle = {
     ...inputStyle,
     cursor: 'pointer'
+};
+
+const errorTextStyle = {
+    display: 'block',
+    marginTop: '0.25rem',
+    fontSize: '0.85rem',
+    color: '#dc3545'
 };
 
 export default CreateItemForm;

@@ -23,6 +23,19 @@ function ItemsFilter({ filters, onFilterChange, onClearFilters, onSubscribeReque
         { value: 'Social Sciences and Humanities (SH)', label: 'Social Sciences and Humanities (SH)' }
     ];
 
+    const extractList = (payload) => {
+        if (Array.isArray(payload)) {
+            return payload;
+        }
+        if (Array.isArray(payload?.data)) {
+            return payload.data;
+        }
+        return [];
+    };
+
+    const getEntityDocumentId = (entity) => entity?.documentId || entity?.attributes?.documentId || entity?.id || '';
+    const getEntityName = (entity) => entity?.attributes?.name || entity?.name || '';
+
     useEffect(() => {
         loadFilterOptions();
     }, []);
@@ -77,7 +90,7 @@ function ItemsFilter({ filters, onFilterChange, onClearFilters, onSubscribeReque
                 `${base_url}/custom-erc-panel/?erc_area=${area}`
             );
             console.log("ERC Panels response:", response.data);
-            setErcPanels(response.data.data || []);
+            setErcPanels(extractList(response.data));
         } catch (err) {
             console.error("Error loading ERC panels:", err);
         }
@@ -89,7 +102,7 @@ function ItemsFilter({ filters, onFilterChange, onClearFilters, onSubscribeReque
                 `${base_url}/erc-keywords?filters[erc_panel][documentId][$eq]=${panelId}`
             );
             console.log("ERC Keywords response:", response.data);
-            setErcKeywords(response.data.data || []);
+            setErcKeywords(extractList(response.data));
         } catch (err) {
             console.error("Error loading ERC keywords:", err);
         }
@@ -647,8 +660,8 @@ function ItemsFilter({ filters, onFilterChange, onClearFilters, onSubscribeReque
                                         {filters.erc_area ? 'All Panels' : 'Select area first'}
                                     </option>
                                     {ercPanels.map(panel => (
-                                        <option key={panel.documentId} value={panel.documentId}>
-                                            {panel.attributes?.name || panel.name}
+                                        <option key={getEntityDocumentId(panel)} value={getEntityDocumentId(panel)}>
+                                            {getEntityName(panel)}
                                         </option>
                                     ))}
                                 </select>
@@ -672,8 +685,8 @@ function ItemsFilter({ filters, onFilterChange, onClearFilters, onSubscribeReque
                                         {filters.erc_panel ? 'All Keywords' : 'Select panel first'}
                                     </option>
                                     {ercKeywords.map(keyword => (
-                                        <option key={keyword.documentId} value={keyword.documentId}>
-                                            {keyword.attributes?.name || keyword.name}
+                                        <option key={getEntityDocumentId(keyword)} value={getEntityDocumentId(keyword)}>
+                                            {getEntityName(keyword)}
                                         </option>
                                     ))}
                                 </select>
