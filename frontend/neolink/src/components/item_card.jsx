@@ -8,6 +8,12 @@ function ItemCard({ item }) {
     const [coverImage, setCoverImage] = useState(null);
     const [imageLoading, setImageLoading] = useState(true);
 
+    const truncateText = (text, maxLength) => {
+        if (!text) return '';
+        if (text.length <= maxLength) return text;
+        return `${text.slice(0, maxLength)}...`;
+    };
+
     useEffect(() => {
         const fetchCoverImage = async () => {
             if (item.coverId) {
@@ -77,6 +83,9 @@ function ItemCard({ item }) {
                 overflow: 'hidden',
                 cursor: 'pointer',
                 transition: 'all 0.3s ease',
+                width: '100%',
+                maxWidth: '100%',
+                minWidth: 0,
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column'
@@ -132,7 +141,7 @@ function ItemCard({ item }) {
             </div>
 
             {/* Card Content */}
-            <div style={{ padding: '1.25rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '1.25rem', flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, maxWidth: '100%' }}>
                 {/* Status Badge */}
                 <div style={{ marginBottom: '0.75rem' }}>
                     <span style={{
@@ -156,12 +165,14 @@ function ItemCard({ item }) {
                     color: '#213547',
                     marginBottom: '0.75rem',
                     lineHeight: '1.3',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
+                    minWidth: 0,
+                    maxWidth: '100%',
+                    whiteSpace: 'normal',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'anywhere',
                     overflow: 'hidden'
                 }}>
-                    {item.name}
+                    {truncateText(item.name, 90)}
                 </h3>
 
                 {/* Description */}
@@ -170,13 +181,15 @@ function ItemCard({ item }) {
                     color: '#6c757d',
                     marginBottom: '1rem',
                     lineHeight: '1.5',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 3,
-                    WebkitBoxOrient: 'vertical',
+                    minWidth: 0,
+                    maxWidth: '100%',
+                    whiteSpace: 'normal',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'anywhere',
                     overflow: 'hidden',
                     flex: 1
                 }}>
-                    {item.description || 'No description available'}
+                    {truncateText(item.description || 'No description available', 150)}
                 </p>
 
                 {/* Meta Info */}

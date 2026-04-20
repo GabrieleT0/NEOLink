@@ -678,7 +678,11 @@ function ItemDetail() {
                     borderRadius: '16px',
                     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
                     padding: '2rem',
-                    marginBottom: '2rem'
+                    marginBottom: '2rem',
+                    width: '100%',
+                    maxWidth: '100%',
+                    minWidth: 0,
+                    overflow: 'hidden'
                 }}>
                     {/* Status Badge and Action Buttons Row */}
                     <div style={{ 
@@ -931,7 +935,12 @@ function ItemDetail() {
                         fontWeight: '700',
                         color: '#213547',
                         marginBottom: '1rem',
-                        lineHeight: '1.2'
+                        lineHeight: '1.2',
+                        minWidth: 0,
+                        maxWidth: '100%',
+                        whiteSpace: 'normal',
+                        wordBreak: 'break-word',
+                        overflowWrap: 'anywhere'
                     }}>
                         {item.name}
                     </h1>
@@ -1054,7 +1063,11 @@ function ItemDetail() {
                                 fontSize: '1.1rem',
                                 lineHeight: '1.7',
                                 color: '#495057',
-                                whiteSpace: 'pre-wrap'
+                                minWidth: 0,
+                                maxWidth: '100%',
+                                whiteSpace: 'pre-wrap',
+                                wordBreak: 'break-word',
+                                overflowWrap: 'anywhere'
                             }}>
                                 {item.description}
                             </p>
