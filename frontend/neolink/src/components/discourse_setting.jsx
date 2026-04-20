@@ -9,7 +9,7 @@ const logo_neolink = `${import.meta.env.BASE_URL}logo.png`;
 
 function CreateItemFormStep2({ token, initialData, onBack, onSubmit }) {
     const [formData, setFormData] = useState({
-        group_display_name: initialData?.group_display_name || initialData?.name,
+        group_display_name: (initialData?.group_display_name || initialData?.name || '').slice(0, 20),
         group_description: initialData?.group_description || initialData?.description,
     });
     const [submitting, setSubmitting] = useState(false);
@@ -19,9 +19,10 @@ function CreateItemFormStep2({ token, initialData, onBack, onSubmit }) {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
+        const normalizedValue = name === 'group_display_name' ? value.slice(0, 20) : value;
         setFormData(prev => ({
             ...prev,
-            [name]: value
+            [name]: normalizedValue
         }));
     };
 

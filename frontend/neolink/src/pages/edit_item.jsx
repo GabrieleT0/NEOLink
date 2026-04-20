@@ -6,6 +6,8 @@ import { base_url } from "../api";
 import { shouldShowField, getCategoryFieldDescription } from "../category_field_config";
 import Navbar from "../components/navbar";
 
+const ITEM_NAME_MAX_LENGTH = 60;
+
 function EditItem() {
     const { documentId } = useParams();
     const navigate = useNavigate();
@@ -338,9 +340,10 @@ function EditItem() {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
+        const normalizedValue = name === 'name' ? value.slice(0, ITEM_NAME_MAX_LENGTH) : value;
         setFormData(prev => ({
             ...prev,
-            [name]: value
+            [name]: normalizedValue
         }));
     };
 
@@ -720,9 +723,18 @@ function EditItem() {
                                 value={formData.name}
                                 onChange={handleInputChange}
                                 required
+                                maxLength={ITEM_NAME_MAX_LENGTH}
                                 style={inputStyle}
                                 placeholder="Enter item name"
                             />
+                            <small style={{
+                                display: 'block',
+                                marginTop: '0.25rem',
+                                fontSize: '0.85rem',
+                                color: '#6c757d'
+                            }}>
+                                Max {ITEM_NAME_MAX_LENGTH} characters ({formData.name.length}/{ITEM_NAME_MAX_LENGTH})
+                            </small>
                         </div>
 
                         {/* Offered By - Always shown (Read-only) */}

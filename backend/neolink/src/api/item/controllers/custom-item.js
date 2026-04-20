@@ -269,7 +269,8 @@ module.exports = {
                     console.log("Created Strapi entry:", createdEntry);
 
                     if (createdCategoryId){
-                        const concatenated_name = group_display_name + ' ' + new Date().toLocaleString();
+                        const nameForTopic = group_display_name.slice(0, 15);
+                        const concatenated_name = nameForTopic + ' ' + new Date().toLocaleString();
 
                         // Step 7: Create the welcome topic FIRST to get its ID
                         const welcome_topic_payload = {
@@ -298,8 +299,9 @@ Feel free to write here to welcome new members who show interest in the event an
                         });
 
                         // Step 8: Create announcement topic in category 101 with correct welcome topic URL
+                        const nameForAnnouncement = name.slice(0, 15);
                         const announcement_payload = {
-                            title: `"${name}" has been successfully published on NEOLink`,
+                            title: `"${nameForAnnouncement}" has been successfully published on NEOLink`,
                             raw: `We are pleased to announce that **${name}** has been successfully created and is now available on the **NEOLink platform**!
 
 **Description**  

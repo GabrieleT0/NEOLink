@@ -354,8 +354,9 @@ function MyItems() {
                         backgroundColor: 'white',
                         borderRadius: '16px',
                         padding: '2rem',
-                        maxWidth: '400px',
-                        width: '90%',
+                        width: 'min(400px, 90vw)',
+                        minWidth: 0,
+                        overflow: 'hidden',
                         boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
                         animation: 'slideUp 0.3s ease-out'
                     }}>
@@ -376,9 +377,13 @@ function MyItems() {
                             <p style={{ 
                                 color: '#6c757d', 
                                 margin: 0,
-                                fontSize: '0.95rem'
+                                fontSize: '0.95rem',
+                                whiteSpace: 'normal',
+                                wordBreak: 'break-word',
+                                overflowWrap: 'anywhere',
+                                maxWidth: '100%'
                             }}>
-                                Are you sure you want to delete "<strong>{deleteConfirm.name}</strong>"? 
+                                Are you sure you want to delete "<strong style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{deleteConfirm.name}</strong>"? 
                                 This action cannot be undone.
                             </p>
                         </div>

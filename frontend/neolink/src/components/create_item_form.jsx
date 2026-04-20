@@ -9,6 +9,7 @@ import { LANGUAGES } from "../config/languages";
 
 const logo_neolink = `${import.meta.env.BASE_URL}logo.png`;
 const eu_logo = `${import.meta.env.BASE_URL}eu_logo.png`;
+const ITEM_NAME_MAX_LENGTH = 60;
 
 function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }) {
     const formRef = useRef(null);
@@ -502,7 +503,7 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        const normalizedValue = name === 'name' ? value.slice(0, 20) : value;
+        const normalizedValue = name === 'name' ? value.slice(0, ITEM_NAME_MAX_LENGTH) : value;
         clearFieldError(name);
         if (error) {
             setError(null);
@@ -838,7 +839,7 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                                 value={formData.name}
                                 onChange={handleInputChange}
                                 required
-                                maxLength={20}
+                                maxLength={ITEM_NAME_MAX_LENGTH}
                                 style={{
                                     ...inputStyle,
                                     borderColor: getFieldError('name') ? '#dc3545' : '#dee2e6'
@@ -854,7 +855,7 @@ function CreateItemForm({ token, initialData, selectedCategory, onNext, onBack }
                                 fontSize: '0.85rem',
                                 color: '#6c757d'
                             }}>
-                                Max 20 characters ({formData.name.length}/20)
+                                Max {ITEM_NAME_MAX_LENGTH} characters ({formData.name.length}/{ITEM_NAME_MAX_LENGTH})
                             </small>
                         </div>
 
