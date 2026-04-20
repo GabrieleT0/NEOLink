@@ -42,6 +42,25 @@ const CRITERIA_LABELS = {
     expiration_to: 'Expiration to',
 };
 
+const ERC_AREA_LABELS = {
+    'Life Sciences (LS)': 'Life Sciences (LS)',
+    'Physical Sciences and Engineering (PE)': 'Physical Sciences and Engineering (PE)',
+    'Social Sciences and Humanities (SH)': 'Social Sciences and Humanities (SH)',
+    LS: 'Life Sciences (LS)',
+    PE: 'Physical Sciences and Engineering (PE)',
+    SH: 'Social Sciences and Humanities (SH)'
+};
+
+const toDisplayText = (value) => {
+    if (value === null || value === undefined) {
+        return '';
+    }
+    if (typeof value === 'object') {
+        return value.name || value.label || value.attributes?.name || value.documentId || value.id || '';
+    }
+    return String(value);
+};
+
 const formatCriteria = (criteria = {}, resolveValue = (_, value) => value) => {
     const entries = Object.entries(criteria).filter(([, value]) => Boolean(value));
     if (entries.length === 0) {
@@ -49,7 +68,7 @@ const formatCriteria = (criteria = {}, resolveValue = (_, value) => value) => {
     }
     return entries.map(([key, value]) => {
         const label = CRITERIA_LABELS[key] || key.replace(/_/g, ' ');
-        return `${label}: ${resolveValue(key, value)}`;
+        return `${label}: ${toDisplayText(resolveValue(key, value))}`;
     });
 };
 
@@ -68,6 +87,8 @@ function NotificationsPage() {
     const [subscriptionsError, setSubscriptionsError] = useState(null);
     const [subscriptionPendingId, setSubscriptionPendingId] = useState(null);
     const [universitiesById, setUniversitiesById] = useState({});
+    const [ercPanelsById, setErcPanelsById] = useState({});
+    const [ercKeywordsById, setErcKeywordsById] = useState({});
 
     const [onlyUnread, setOnlyUnread] = useState(false);
     const [markingAll, setMarkingAll] = useState(false);
@@ -127,27 +148,60 @@ function NotificationsPage() {
             return;
         }
 
-        const loadUniversities = async () => {
-            try {
-                const response = await axios.get(`${base_url}/universities`);
-                const data = response.data?.data || response.data || [];
-                const nextMap = {};
+        const extractList = (payload) => {
+            if (Array.isArray(payload)) {
+                return payload;
+            }
+            if (Array.isArray(payload?.data)) {
+                return payload.data;
+            }
+            return [];
+        };
 
-                data.forEach((uni) => {
+        const toIdNameMap = (entities) => {
+            const nextMap = {};
+            entities.forEach((entity) => {
+                const id = entity.documentId || entity.id || entity.attributes?.documentId;
+                const name = entity.attributes?.name || entity.name;
+                if (id && name) {
+                    nextMap[id] = name;
+                }
+            });
+            return nextMap;
+        };
+
+        const loadCriteriaDictionaries = async () => {
+            try {
+                const [universitiesResponse, panelsResponse, keywordsResponse] = await Promise.all([
+                    axios.get(`${base_url}/universities`),
+                    axios.get(`${base_url}/erc-panels?pagination[pageSize]=500`),
+                    axios.get(`${base_url}/erc-keywords?pagination[pageSize]=1000`)
+                ]);
+
+                const universities = extractList(universitiesResponse.data);
+                const panels = extractList(panelsResponse.data);
+                const keywords = extractList(keywordsResponse.data);
+
+                const universitiesMap = {};
+                universities.forEach((uni) => {
                     const id = uni.documentId || uni.id;
                     const name = uni.attributes?.name || uni.university_name || uni.name;
                     if (id && name) {
-                        nextMap[id] = name;
+                        universitiesMap[id] = name;
                     }
                 });
 
-                setUniversitiesById(nextMap);
+                setUniversitiesById(universitiesMap);
+                setErcPanelsById(toIdNameMap(panels));
+                setErcKeywordsById(toIdNameMap(keywords));
             } catch (err) {
                 setUniversitiesById({});
+                setErcPanelsById({});
+                setErcKeywordsById({});
             }
         };
 
-        loadUniversities();
+        loadCriteriaDictionaries();
     }, [token]);
 
     const handleMarkRead = async (notificationId) => {
@@ -327,6 +381,15 @@ function NotificationsPage() {
             (key, value) => {
                 if (key === 'university') {
                     return universitiesById[value] || value;
+                }
+                if (key === 'erc_area') {
+                    return ERC_AREA_LABELS[value] || value;
+                }
+                if (key === 'erc_panel') {
+                    return ercPanelsById[value] || value;
+                }
+                if (key === 'erc_keyword') {
+                    return ercKeywordsById[value] || value;
                 }
                 return value;
             }

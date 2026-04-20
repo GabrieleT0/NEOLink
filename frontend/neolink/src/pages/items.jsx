@@ -11,6 +11,15 @@ import { notificationsApi } from "../services/notifications";
 const logo_neolaia = "/logoNEOLAiA.png";
 const eu_logo = "/eu_logo.png";
 
+const ERC_AREA_LABELS = {
+    'Life Sciences (LS)': 'Life Sciences (LS)',
+    'Physical Sciences and Engineering (PE)': 'Physical Sciences and Engineering (PE)',
+    'Social Sciences and Humanities (SH)': 'Social Sciences and Humanities (SH)',
+    LS: 'Life Sciences (LS)',
+    PE: 'Physical Sciences and Engineering (PE)',
+    SH: 'Social Sciences and Humanities (SH)'
+};
+
 function ItemsList() {
     const navigate = useNavigate();
     const [items, setItems] = useState([]);
@@ -43,6 +52,123 @@ function ItemsList() {
     const [subscriptionSubmitting, setSubscriptionSubmitting] = useState(false);
     const [subscriptionModalError, setSubscriptionModalError] = useState(null);
     const [subscriptionBanner, setSubscriptionBanner] = useState(null);
+    const [categoryNamesById, setCategoryNamesById] = useState({});
+    const [universitiesById, setUniversitiesById] = useState({});
+    const [ercPanelsById, setErcPanelsById] = useState({});
+    const [ercKeywordsById, setErcKeywordsById] = useState({});
+
+    useEffect(() => {
+        const extractList = (payload) => {
+            if (Array.isArray(payload)) {
+                return payload;
+            }
+            if (Array.isArray(payload?.data)) {
+                return payload.data;
+            }
+            return [];
+        };
+
+        const loadLookupData = async () => {
+            try {
+                const [categoriesResponse, universitiesResponse, panelsResponse, keywordsResponse] = await Promise.all([
+                    axios.get(`${base_url}/item-categories`),
+                    axios.get(`${base_url}/universities`),
+                    axios.get(`${base_url}/erc-panels?pagination[pageSize]=500`),
+                    axios.get(`${base_url}/erc-keywords?pagination[pageSize]=1000`)
+                ]);
+
+                const categoriesMap = {};
+                extractList(categoriesResponse.data).forEach((cat) => {
+                    const id = cat.documentId || cat.id;
+                    const name = cat.attributes?.name || cat.name;
+                    if (id && name) {
+                        categoriesMap[id] = name;
+                    }
+                });
+
+                const universitiesMap = {};
+                extractList(universitiesResponse.data).forEach((uni) => {
+                    const id = uni.documentId || uni.id;
+                    const name = uni.attributes?.name || uni.university_name || uni.name;
+                    if (id && name) {
+                        universitiesMap[id] = name;
+                    }
+                });
+
+                const panelsMap = {};
+                extractList(panelsResponse.data).forEach((panel) => {
+                    const id = panel.documentId || panel.id || panel.attributes?.documentId;
+                    const name = panel.attributes?.name || panel.name;
+                    if (id && name) {
+                        panelsMap[id] = name;
+                    }
+                });
+
+                const keywordsMap = {};
+                extractList(keywordsResponse.data).forEach((keyword) => {
+                    const id = keyword.documentId || keyword.id || keyword.attributes?.documentId;
+                    const name = keyword.attributes?.name || keyword.name;
+                    if (id && name) {
+                        keywordsMap[id] = name;
+                    }
+                });
+
+                setCategoryNamesById(categoriesMap);
+                setUniversitiesById(universitiesMap);
+                setErcPanelsById(panelsMap);
+                setErcKeywordsById(keywordsMap);
+            } catch (lookupError) {
+                setCategoryNamesById({});
+                setUniversitiesById({});
+                setErcPanelsById({});
+                setErcKeywordsById({});
+            }
+        };
+
+        loadLookupData();
+    }, []);
+
+    useEffect(() => {
+        const fetchMissingLookupValues = async () => {
+            const requests = [];
+
+            if (filters.erc_panel && !ercPanelsById[filters.erc_panel]) {
+                requests.push(
+                    axios
+                        .get(`${base_url}/erc-panels?filters[documentId][$eq]=${filters.erc_panel}&pagination[pageSize]=1`)
+                        .then((response) => {
+                            const panel = response.data?.data?.[0];
+                            const panelId = panel?.documentId || panel?.id || panel?.attributes?.documentId;
+                            const panelName = panel?.attributes?.name || panel?.name;
+                            if (panelId && panelName) {
+                                setErcPanelsById((prev) => ({ ...prev, [panelId]: panelName }));
+                            }
+                        })
+                );
+            }
+
+            if (filters.erc_keyword && !ercKeywordsById[filters.erc_keyword]) {
+                requests.push(
+                    axios
+                        .get(`${base_url}/erc-keywords?filters[documentId][$eq]=${filters.erc_keyword}&pagination[pageSize]=1`)
+                        .then((response) => {
+                            const keyword = response.data?.data?.[0];
+                            const keywordId = keyword?.documentId || keyword?.id || keyword?.attributes?.documentId;
+                            const keywordName = keyword?.attributes?.name || keyword?.name;
+                            if (keywordId && keywordName) {
+                                setErcKeywordsById((prev) => ({ ...prev, [keywordId]: keywordName }));
+                            }
+                        })
+                );
+            }
+
+            if (requests.length > 0) {
+                await Promise.allSettled(requests);
+            }
+        };
+
+        fetchMissingLookupValues();
+    }, [filters.erc_panel, filters.erc_keyword, ercPanelsById, ercKeywordsById]);
 
     const describeFilterValue = (key, value) => {
         if (!value) {
@@ -60,9 +186,9 @@ function ItemsList() {
             case 'search':
                 return `Search: "${value}"`;
             case 'category_id':
-                return `Category filter (${shortId(value)})`;
+                return `Category: ${categoryNamesById[value] || shortId(value)}`;
             case 'university':
-                return `University filter (${shortId(value)})`;
+                return `University: ${universitiesById[value] || shortId(value)}`;
             case 'item_status':
                 return `Status: ${value}`;
             case 'languages':
@@ -70,11 +196,11 @@ function ItemsList() {
             case 'level_of_study':
                 return `Level of study: ${value}`;
             case 'erc_area':
-                return `ERC area: ${value}`;
+                return `ERC area: ${ERC_AREA_LABELS[value] || value}`;
             case 'erc_panel':
-                return `ERC panel (${shortId(value)})`;
+                return `ERC panel: ${ercPanelsById[value] || shortId(value)}`;
             case 'erc_keyword':
-                return `ERC keyword (${shortId(value)})`;
+                return `ERC keyword: ${ercKeywordsById[value] || shortId(value)}`;
             case 'start_date_from':
                 return `Start ≥ ${value}`;
             case 'start_date_to':
@@ -97,7 +223,7 @@ function ItemsList() {
             .filter(([, value]) => Boolean(value))
             .map(([key, value]) => describeFilterValue(key, value))
             .filter(Boolean);
-    }, [filters]);
+    }, [filters, categoryNamesById, universitiesById, ercPanelsById, ercKeywordsById]);
 
     const hasSubscriptionCriteria = activeFilterChips.length > 0;
 
