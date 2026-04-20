@@ -245,7 +245,7 @@ function CreateItemFormStep2({ token, initialData, onBack, onSubmit }) {
                                 <input
                                     type="text"
                                     name="group_display_name"
-                                    value={formData.group_display_name}
+                                    value={formData.group_display_name.slice(0, 20)}
                                     onChange={handleInputChange}
                                     placeholder="Enter the name users will see"
                                     required
@@ -255,7 +255,7 @@ function CreateItemFormStep2({ token, initialData, onBack, onSubmit }) {
                                     onBlur={(e) => e.target.style.borderColor = '#dee2e6'}
                                 />
                                 <small style={{ color: '#6c757d', fontSize: '0.8rem', marginTop: '0.25rem', display: 'block' }}>
-                                    This is the friendly name displayed to users (max 20 characters: {formData.group_display_name.length}/20)
+                                    This is the friendly name displayed to users (max 30 characters: {formData.group_display_name.length}/20)
                                 </small>
                             </div>
 
