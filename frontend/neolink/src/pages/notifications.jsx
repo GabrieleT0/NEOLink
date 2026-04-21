@@ -72,6 +72,34 @@ const formatCriteria = (criteria = {}, resolveValue = (_, value) => value) => {
     });
 };
 
+const expandLanguageChips = (chips = []) => {
+    return chips.flatMap((chip) => {
+        if (typeof chip !== 'string') {
+            return [];
+        }
+
+        const [label, rawValue] = chip.split(':');
+        if (!label || !rawValue) {
+            return [chip];
+        }
+
+        if (label.trim().toLowerCase() !== 'language') {
+            return [chip];
+        }
+
+        const languages = rawValue
+            .split(',')
+            .map((entry) => entry.trim())
+            .filter(Boolean);
+
+        if (languages.length === 0) {
+            return [chip];
+        }
+
+        return languages.map((language) => `${label.trim()}: ${language}`);
+    });
+};
+
 function NotificationsPage() {
     const navigate = useNavigate();
     const { token, loading } = useContext(AuthContext);
@@ -394,6 +422,7 @@ function NotificationsPage() {
                 return value;
             }
         );
+        const chipsExpanded = expandLanguageChips(chips);
         const isPaused = !subscription.is_active;
         const isPending = subscriptionPendingId === subscription.documentId;
 
@@ -435,9 +464,9 @@ function NotificationsPage() {
                 </p>
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', margin: '1rem 0' }}>
-                    {chips.map((chip) => (
+                    {chipsExpanded.map((chip, index) => (
                         <span
-                            key={chip}
+                            key={`${chip}-${index}`}
                             style={{
                                 backgroundColor: '#f0f0ff',
                                 borderRadius: '999px',

@@ -367,6 +367,13 @@ function ItemDetail() {
         }
     };
 
+    const languageChips = typeof item?.languages === 'string'
+        ? item.languages
+            .split(',')
+            .map((entry) => entry.trim())
+            .filter(Boolean)
+        : [];
+
     const getCoverImageUrl = () => {
         if (coverImage && coverImage.url) {
             const uploadBaseUrl = getUploadBaseUrl();
@@ -1018,15 +1025,30 @@ function ItemDetail() {
                                 </div>
                         )}
 
-                        {item.languages && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        {languageChips.length > 0 && (
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
                                 <span style={{ fontSize: '1.2rem' }}>🌐</span>
                                 <div>
                                     <div style={{ fontSize: '0.75rem', color: '#6c757d', fontWeight: '600' }}>
                                         Languages
                                     </div>
-                                    <div style={{ fontWeight: '600', color: '#495057' }}>
-                                        {item.languages}
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.2rem' }}>
+                                        {languageChips.map((language) => (
+                                            <span
+                                                key={language}
+                                                style={{
+                                                    padding: '0.2rem 0.6rem',
+                                                    borderRadius: '999px',
+                                                    backgroundColor: '#eef2ff',
+                                                    border: '1px solid #d6ddff',
+                                                    color: '#4c57a8',
+                                                    fontWeight: '600',
+                                                    fontSize: '0.8rem'
+                                                }}
+                                            >
+                                                {language}
+                                            </span>
+                                        ))}
                                     </div>
                                 </div>
                             </div>

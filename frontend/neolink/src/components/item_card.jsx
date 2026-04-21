@@ -48,6 +48,13 @@ function ItemCard({ item }) {
         }
     };
 
+    const languageChips = typeof item.languages === 'string'
+        ? item.languages
+            .split(',')
+            .map((entry) => entry.trim())
+            .filter(Boolean)
+        : [];
+
     const getCoverImageUrl = () => {
         if (coverImage && coverImage.url) {
             // Use the medium format if available, otherwise use the original
@@ -208,10 +215,27 @@ function ItemCard({ item }) {
                         </div>
                     )}
                     
-                    {item.languages && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {languageChips.length > 0 && (
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
                             <span style={{ color: '#6c757d' }}>🌐</span>
-                            <span style={{ color: '#495057' }}>{item.languages}</span>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                                {languageChips.map((language) => (
+                                    <span
+                                        key={language}
+                                        style={{
+                                            padding: '0.15rem 0.55rem',
+                                            borderRadius: '999px',
+                                            backgroundColor: '#eef2ff',
+                                            border: '1px solid #d6ddff',
+                                            color: '#4c57a8',
+                                            fontWeight: '600',
+                                            fontSize: '0.75rem'
+                                        }}
+                                    >
+                                        {language}
+                                    </span>
+                                ))}
+                            </div>
                         </div>
                     )}
 

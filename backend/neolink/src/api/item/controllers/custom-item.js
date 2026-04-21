@@ -6,6 +6,25 @@ const { createGroupId } = require('../../../utils/group_id');
 const { transformString } = require('../../../utils/trasform_string');
 const { group } = require('console');
 
+const normalizeLanguages = (value) => {
+    if (Array.isArray(value)) {
+        const cleaned = value
+            .map((entry) => (typeof entry === 'string' ? entry.trim() : ''))
+            .filter((entry) => entry.length > 0);
+        return cleaned.length > 0 ? cleaned.join(', ') : null;
+    }
+
+    if (typeof value === 'string') {
+        const cleaned = value
+            .split(',')
+            .map((entry) => entry.trim())
+            .filter((entry) => entry.length > 0);
+        return cleaned.length > 0 ? cleaned.join(', ') : null;
+    }
+
+    return null;
+};
+
 module.exports = {
     async create(ctx, next){
         let createdEntry = null;
@@ -215,7 +234,7 @@ module.exports = {
                         learning_outcomes,
                         multimedial_material_provided: multimediarial_material_provided,
                         end_date,
-                        languages,
+                        languages: normalizeLanguages(languages),
                         speakers,
                         pedagogical_objectives,
                         level_of_study,
@@ -798,7 +817,7 @@ Join the conversation at the following link: ${process.env.DISCOURSE_URL}/t/${we
                 learning_outcomes: data.learning_outcomes || null,
                 multimedial_material_provided: data.multimediarial_material_provided || null,
                 end_date: data.end_date || null,
-                languages: data.languages || null,
+                languages: normalizeLanguages(data.languages),
                 speakers: data.speakers || null,
                 pedagogical_objectives: data.pedagogical_objectives || null,
                 level_of_study: data.level_of_study || null,
