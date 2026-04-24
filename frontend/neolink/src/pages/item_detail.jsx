@@ -5,6 +5,7 @@ import { base_url, discourse_url, orh_url } from "../api";
 import { jwtDecode } from "jwt-decode";
 import Navbar from "../components/navbar.jsx";
 import QRCode from "qrcode";
+import { getCategoryFallbackImage } from "../utils.jsx";
 
 const logo_neolaia = "/logoNEOLAiA.png";
 const eu_logo = "/eu_logo.png";
@@ -382,7 +383,7 @@ function ItemDetail() {
             }
             return `${uploadBaseUrl}${coverImage.url}`;
         }
-        return 'https://placehold.co/1200x400?text=No+Cover+Image';
+        return getCategoryFallbackImage(item?.item_category?.name, 'banner');
     };
 
     // Helper function to format ISCED display
@@ -609,7 +610,11 @@ function ItemDetail() {
                     borderRadius: '16px',
                     overflow: 'hidden',
                     marginBottom: '2rem',
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                    backgroundColor: '#f8f9fa',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
                 }}>
                     <img 
                         src={getCoverImageUrl()}
@@ -620,7 +625,8 @@ function ItemDetail() {
                             objectFit: 'cover'
                         }}
                         onError={(e) => {
-                            e.target.src = 'https://placehold.co/1200x400?text=No+Image';
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = getCategoryFallbackImage(item?.item_category?.name, 'banner');
                         }}
                     />
                 </div>

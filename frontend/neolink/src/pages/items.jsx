@@ -329,6 +329,7 @@ function ItemsList() {
         try {
             // Build query string from filters
             const queryParams = new URLSearchParams();
+            queryParams.append('populate[item_category]', 'true');
             
             // Multi-field search using $or operator
             let andGroupIndex = 0;

@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { base_url } from "../api";
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { getCategoryFallbackImage } from "../utils.jsx";
 
 function ItemCard({ item }) {
     const navigate = useNavigate();
@@ -57,27 +58,24 @@ function ItemCard({ item }) {
 
     const getCoverImageUrl = () => {
         if (coverImage && coverImage.url) {
+            const uploadBaseUrl = base_url.replace('/api', '');
             // Use the medium format if available, otherwise use the original
             if (coverImage.formats?.small) {
                 console.log("Using medium format for cover image");
-                let img_url = base_url.replace('/api', '');
-                return `${img_url}${coverImage.formats.small.url}`;
+                return `${uploadBaseUrl}${coverImage.formats.small.url}`;
             } else if (coverImage.formats?.thumbnail) {
                 console.log("Using thumbnail format for cover image");
-                let img_url = base_url.replace('/api', '');
-                return `${img_url}${coverImage.formats.thumbnail.url}`;
+                return `${uploadBaseUrl}${coverImage.formats.thumbnail.url}`;
             } else if (coverImage.formats?.medium) {
                 console.log("Using medium format for cover image");
-                let img_url = base_url.replace('/api', '');
-                return `${img_url}${coverImage.formats.medium.url}`;
+                return `${uploadBaseUrl}${coverImage.formats.medium.url}`;
             } else if (coverImage.formats?.large) {
                 console.log("Using large format for cover image");
-                let img_url = base_url.replace('/api', '');
-                return `${img_url}${coverImage.formats.large.url}`;
+                return `${uploadBaseUrl}${coverImage.formats.large.url}`;
             }
-            return `${base_url}${coverImage.url}`;
+            return `${uploadBaseUrl}${coverImage.url}`;
         }
-        return 'https://placehold.co/400x250?text=No+Image';
+        return getCategoryFallbackImage(item?.item_category?.name, 'card');
     };
 
     return (
@@ -141,7 +139,8 @@ function ItemCard({ item }) {
                             objectFit: 'cover'
                         }}
                         onError={(e) => {
-                            e.target.src = 'https://placehold.co/400x250?text=No+Image';
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = getCategoryFallbackImage(item?.item_category?.name, 'card');
                         }}
                     />
                 )}
