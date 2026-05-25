@@ -20,6 +20,7 @@ function Login(){
     const { token, setToken, loading } = authContext;
     const [token_validity, setTokenValidity] = useState(false);
     const [shibbolethLoading, setShibbolethLoading] = useState(false);
+    const [loginError, setLoginError] = useState("");
     
     // Get the redirect path from location state, default to personal page
     const from = location.state?.from || "/personal-page";
@@ -27,6 +28,15 @@ function Login(){
     // Handle token from Shibboleth callback
     useEffect(() => {
         const tokenFromUrl = searchParams.get('token');
+        const errorFromUrl = searchParams.get('error');
+
+        if (errorFromUrl) {
+            setLoginError(errorFromUrl);
+            setShibbolethLoading(false);
+            window.history.replaceState({}, document.title, window.location.pathname);
+            return;
+        }
+
         if (tokenFromUrl) {
             // Store the token from Shibboleth authentication
             localStorage.setItem("token", tokenFromUrl);
@@ -54,6 +64,7 @@ function Login(){
 
     // Handle Shibboleth login
     const handleShibbolethLogin = () => {
+        setLoginError("");
         setShibbolethLoading(true);
         // Redirect to Shibboleth login
         // The SP will authenticate and redirect back to /api/auth/shibboleth
@@ -130,6 +141,12 @@ function Login(){
                                 Sign in to access your NEOLink account
                             </p>
                         </div>
+
+                        {loginError && (
+                            <div className="alert alert-danger" role="alert">
+                                {loginError}
+                            </div>
+                        )}
                         
                         {SHIBBOLETH_ENABLED ? (
                             /* Shibboleth/eduGAIN Login */

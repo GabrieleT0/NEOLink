@@ -8,6 +8,24 @@ const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const { normalizePersonName } = require('../../../utils/normalize_text');
 
+const getAffiliationValues = (affiliation) => {
+    if (!affiliation) {
+        return [];
+    }
+
+    const values = Array.isArray(affiliation) ? affiliation : String(affiliation).split(/[;,\s]+/);
+
+    return values
+        .map((value) => value.trim().toLowerCase())
+        .filter(Boolean)
+        .map((value) => value.split('@')[0]);
+};
+
+const isDeniedStudentAffiliation = (affiliation) => {
+    const values = getAffiliationValues(affiliation);
+    return values.includes('student') && !values.includes('member') && !values.includes('staff');
+};
+
 module.exports = {
     /**
      * Main authentication endpoint
@@ -44,6 +62,13 @@ module.exports = {
             // Use cn or mail as primary identifier
             const email = shibHeaders.mail || normalizedShibHeaders.cn;
             const uniqueId = shibHeaders.persistentId || normalizedShibHeaders.cn || email; // Fallback to email or cn if no persistentId
+            const frontendUrl = (process.env.FRONTEND_URL || '').replace(/\/$/, ''); // Remove trailing slash
+
+            if (isDeniedStudentAffiliation(shibHeaders.affiliation)) {
+                const errorMessage = 'Students must also be member or staff to access NEOLink.';
+                const redirectUrl = `${frontendUrl}/login?error=${encodeURIComponent(errorMessage)}`;
+                return ctx.redirect(redirectUrl);
+            }
 
             // Check if user already exists
             let seller = await strapi.db.query('api::seller.seller').findOne({
@@ -171,7 +196,6 @@ module.exports = {
             });
 
             // Redirect to frontend with token
-            const frontendUrl = (process.env.FRONTEND_URL || '').replace(/\/$/, ''); // Remove trailing slash
             const redirectUrl = `${frontendUrl}/login?token=${encodeURIComponent(token)}`;
             
             ctx.redirect(redirectUrl);
