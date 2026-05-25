@@ -22,6 +22,10 @@ const getAffiliationValues = (affiliation) => {
 };
 
 const isDeniedStudentAffiliation = (affiliation) => {
+    if (!affiliation) {
+        return false;
+    }
+
     const values = getAffiliationValues(affiliation);
     return values.includes('student') && !values.includes('member') && !values.includes('staff');
 };
@@ -41,7 +45,8 @@ module.exports = {
                 displayName: ctx.request.headers['x-shib-displayname'],
                 givenName: ctx.request.headers['x-shib-givenname'],
                 surname: ctx.request.headers['x-shib-sn'] || ctx.request.headers['x-shib-surname'],
-                affiliation: ctx.request.headers['x-shib-affiliation'] || ctx.request.headers['x-shib-edupersonaffiliation'] || null,
+                affiliation: ctx.request.headers['x-shib-affiliation'] || null,
+                eduPersonAffiliation: ctx.request.headers['x-shib-edupersonaffiliation'] || null,
                 persistentId: ctx.request.headers['x-shib-persistentid'] || ctx.request.headers['x-shib-pairwiseid'] || ctx.request.headers['x-shib-edupersonid'] || null,
                 sessionId: ctx.request.headers['x-shib-session-id'],
             };
@@ -64,7 +69,7 @@ module.exports = {
             const uniqueId = shibHeaders.persistentId || normalizedShibHeaders.cn || email; // Fallback to email or cn if no persistentId
             const frontendUrl = (process.env.FRONTEND_URL || '').replace(/\/$/, ''); // Remove trailing slash
 
-            if (isDeniedStudentAffiliation(shibHeaders.affiliation)) {
+            if (isDeniedStudentAffiliation(shibHeaders.eduPersonAffiliation)) {
                 const errorMessage = 'Students must also be member or staff to access NEOLink.';
                 const redirectUrl = `${frontendUrl}/login?error=${encodeURIComponent(errorMessage)}`;
                 return ctx.redirect(redirectUrl);
@@ -98,7 +103,7 @@ module.exports = {
                         shibboleth_id: uniqueId,
                         email: email || seller.email,
                         full_name: fullName || seller.full_name,
-                        shibboleth_affiliation: shibHeaders.affiliation,
+                        shibboleth_affiliation: shibHeaders.eduPersonAffiliation,
                         shibboleth_session_id: shibHeaders.sessionId,
                         last_shibboleth_login: new Date().toISOString(),
                         first_access: true,
@@ -158,7 +163,7 @@ module.exports = {
                                 // OTP fields not used with Shibboleth
                                 otp_active: false,
                                 "full_name": fullName,
-                                shibboleth_affiliation: shibHeaders.affiliation,
+                                shibboleth_affiliation: shibHeaders.eduPersonAffiliation,
                                 shibboleth_session_id: shibHeaders.sessionId,
                                 "research_group_link": research_group_link,
                                 "personal_page_link": personal_page_link,
@@ -190,7 +195,7 @@ module.exports = {
                 virtual_cafe_id: seller.virtual_cafe_id,
                 orh_id: seller.orh_id,
                 auth_method: 'shibboleth',
-                shibboleth_affiliation: shibHeaders.affiliation,
+                shibboleth_affiliation: shibHeaders.eduPersonAffiliation,
             }, process.env.JWT_SECRET_CUSTOM_AUTH, {
                 expiresIn: process.env.JWT_EXPIRES_CUSTOM_AUTH_IN
             });
