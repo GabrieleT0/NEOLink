@@ -186,19 +186,18 @@ const PrivacyPolicy = () => {
                             following changes to privacy regulations.
                         </p>
                     </Section>
-
                     <Section title="9. Code of Conduct" isLast>
                         <p>
-                            Your data is protected according to the{' '}
+                            This service complies with the{' '}
                             <a 
-                                href="https://geant3plus.archive.geant.net/Documents/GEANT_DP_CoC_ver1.0.pdf" 
+                                href="https://refeds.org/category/code-of-conduct/v2"
                                 target="_blank" 
                                 rel="noopener noreferrer"
                                 style={linkStyle}
                             >
-                                Code of Conduct for Service Providers
+                                REFEDS Data Protection Code of Conduct v2
                             </a>
-                            , a common standard for research and higher education.
+                            , a common standard for processing personal data in research and higher education federations.
                         </p>
                         <p>
                             This privacy statement applies to the service identified by the following SAML entityID:
